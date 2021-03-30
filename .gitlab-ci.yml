@@ -1,0 +1,12 @@
+include:
+  - project: 'system/gitlab/common'
+    ref: v3.0.0
+    file: '/templates/gitlab-ci/python/common.yml'
+
+  - project: 'system/gitlab/common'
+    ref: v3.0.0
+    file: '/templates/gitlab-ci/python/package.yml'
+
+.python:
+  tags:
+    - python37
