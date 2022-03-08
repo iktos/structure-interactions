@@ -9,4 +9,4 @@ include:
 
 .python:
   tags:
-    - python37
+    - python-structure-based

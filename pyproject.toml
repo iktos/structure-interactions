@@ -1,55 +1,52 @@
 [tool.poetry]
 # TODO change your-package-name
-name = "iktos-your-package-name"
-version = "0.1.0"
-description = "Ready to deliver"
 authors = ["Iktos"]
-readme = "README.md"
+description = "Ready to deliver"
+name = "iktos-structure-interactions"
 packages = [
-    { include = "iktos" },
-    { include = "iktos/**/*.py" },
+  {include = "iktos"},
+  {include = "iktos/**/*.py"},
 ]
+readme = "README.md"
+version = "0.1.0"
 
 [[tool.poetry.source]]
 name = "iktos"
-url = "https://pypi.golgoth.iktos.ai/simple"
 secondary = true
+url = "https://pypi.golgoth.iktos.ai/simple"
 
 [tool.poetry.dependencies]
-python = "^3.7"
 iktos-logger = "^2.0.2"
+python = "^3.7"
 
 [tool.mypy]
-python_version = "3.7"
 ignore_missing_imports = true
+python_version = "3.7"
 
 [tool.poetry.dev-dependencies]
+black = "==20.8b1"
 flake8 = "^3.9.0"
 flake8-colors = "^0.1.9"
+isort = "^5.9.0"
 mypy = "^0.910"
-black = "==20.8b1"
 pytest = "^6.2.2"
 pytest-cov = "^3.0.0"
-isort = "^5.9.0"
 taskipy = "^1.2.1"
 
 [tool.taskipy.tasks]
 black = "black iktos/"
-pc-black = "black "
 check-black = "black iktos/ --check"
-pc-check-black = "black --check"
 isort = "isort iktos/"
-pc-isort = "isort "
 linter = "flake8 iktos/"
-pc-linter = "flake8 "
 mypy = "mypy iktos/"
+pc-black = "black "
+pc-check-black = "black --check"
+pc-isort = "isort "
+pc-linter = "flake8 "
 pc-mypy = "mypy "
 test = "python -m pytest --cov-report=term --cov-report=html:cov_html --cov ./iktos"
 
 [tool.black]
-line-length = 88
-target-version = ['py37']
-include = '\.pyi?$'
 exclude = '''
 /(
     \.eggs
@@ -64,16 +61,20 @@ exclude = '''
   | dist
 )/
 '''
+include = '\.pyi?$'
+line-length = 88
+skip_string_normalization = true
+target-version = ['py37']
 
 [tool.isort]
-profile = "black"
 atomic = true
-known_localpkg = "iktos.your_package_name"
+known_localpkg = "iktos.structure-interactions"
+profile = "black"
 sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALPKG,LOCALFOLDER"
 
 [build-system]
-requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
 
 [tool.coverage.run]
 omit = [".venv/*", "**/virtualenvs/**"]
