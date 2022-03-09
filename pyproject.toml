@@ -63,12 +63,11 @@ exclude = '''
 '''
 include = '\.pyi?$'
 line-length = 88
-skip_string_normalization = true
 target-version = ['py37']
 
 [tool.isort]
 atomic = true
-known_localpkg = "iktos.structure-interactions"
+known_localpkg = "iktos.structure_interactions"
 profile = "black"
 sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALPKG,LOCALFOLDER"
 
