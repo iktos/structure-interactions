@@ -17,7 +17,9 @@ url = "https://pypi.golgoth.iktos.ai/simple"
 
 [tool.poetry.dependencies]
 iktos-logger = "^2.0.2"
-python = "^3.7"
+iktos-structure-analysis = "~2.3.0"
+iktos-structure-utils = "~3.0"
+python = "~3.7.1"
 
 [tool.mypy]
 ignore_missing_imports = true

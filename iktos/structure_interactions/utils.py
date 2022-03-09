@@ -1,20 +1,22 @@
 from __future__ import absolute_import
-import numpy as np
+
 from copy import deepcopy
 from itertools import product
 from typing import List, Optional, Tuple
 
+import numpy as np
 from iktos.logger import getLogger
-from iktos.structure_utils.toolkits.obabel import read_mol as read_obmol, rename_residue
+from iktos.structure_utils.toolkits.obabel import read_mol as read_obmol
+from iktos.structure_utils.toolkits.obabel import rename_residue
 
 try:
-    from openbabel.openbabel import (
+    from openbabel.openbabel import (  # openbabel 3
         OBAtom,
-        obErrorLog,
+        OBAtomAtomIter,
         OBMol,
         OBMolAtomIter,
-        OBAtomAtomIter,
-    )  # openbabel 3
+        obErrorLog,
+    )
 except ModuleNotFoundError:
     from openbabel import (
         OBAtom,
@@ -26,7 +28,6 @@ except ModuleNotFoundError:
 
 from . import constants
 from .math_utils import get_vector, get_vector_angle
-
 
 logger = getLogger(__name__)
 
