@@ -1,3 +1,9 @@
+"""
+Copyright (C) Iktos - All Rights Reserved
+Unauthorized copying of this file, via any medium is strictly prohibited
+Proprietary and confidential
+"""
+
 from __future__ import absolute_import
 
 from iktos.logger import getLogger
@@ -7,9 +13,10 @@ try:
 except ModuleNotFoundError:
     from openbabel import OBMolAtomIter  # openbabel 2 (warning in structure-utils)
 
-from .math_utils import get_centroid, get_euclidean_distance_3d
 from .Mol import Mol
+from .math_utils import get_centroid, get_euclidean_distance_3d
 from .utils import get_coords
+
 
 logger = getLogger(__name__)
 
