@@ -120,7 +120,7 @@ class InteractionProfiler:
         if as_string:
             lig_blocks = lig_coords
         else:
-            lig_blocks = file_to_blocks(lig_coords, format=lig_format)
+            lig_blocks = file_to_blocks(lig_coords, fmt=lig_format)
         for lig in lig_blocks:
             status = self._load_ligand(lig, lig_format=lig_format, as_string=as_string)
             if not status:
@@ -139,7 +139,7 @@ class InteractionProfiler:
         # Read and parse receptor file/string
         rec_coords_block, mapping = parse_pdb(rec_coords, as_string=as_string)
         obmol_rec = read_mol(
-            rec_coords_block, format='pdb', title='receptor', as_string=True
+            rec_coords_block, fmt='pdb', title='receptor', as_string=True
         )
         if obmol_rec is None:
             return False
@@ -164,7 +164,7 @@ class InteractionProfiler:
 
         # Read and parse ligand file/string
         obmol_lig = read_mol(
-            lig_coords, format=lig_format, title='ligand', as_string=as_string
+            lig_coords, fmt=lig_format, title='ligand', as_string=as_string
         )
         if obmol_lig is None:
             return False
