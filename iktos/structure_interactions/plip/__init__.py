@@ -5,7 +5,7 @@ Proprietary and confidential
 """
 
 from .Atom import Atom
-from .InteractionProfiler import InteractionProfiler
 from .ContactMapper import ContactMapper
+from .InteractionProfiler import InteractionProfiler
 
 __all__ = ['Atom', 'InteractionProfiler', 'ContactMapper']

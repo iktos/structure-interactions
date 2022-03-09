@@ -5,10 +5,10 @@ Proprietary and confidential
 """
 
 from __future__ import absolute_import
-from itertools import product, combinations
+
+from itertools import combinations, product
 
 from iktos.logger import getLogger
-
 
 logger = getLogger(__name__)
 

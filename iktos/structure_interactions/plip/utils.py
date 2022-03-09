@@ -12,7 +12,6 @@ import iktos.logger as logging
 from iktos.structure_utils.toolkits.rdkit import read_mol, write_mol
 from rdkit.Chem import MolToSmiles
 
-
 LOGGER = logging.getLogger(__name__)
 
 

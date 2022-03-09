@@ -11,7 +11,7 @@ exclude =
     *.egg-info,
     .cache,
     .eggs
-max-complexity = 10
+max-complexity = 20
 select = C,E,F,W,B,B950
 import-order-style = google
 application-import-names = flake8

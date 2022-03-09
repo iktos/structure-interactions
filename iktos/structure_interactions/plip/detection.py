@@ -5,21 +5,21 @@ Proprietary and confidential
 """
 
 from __future__ import absolute_import
-import numpy as np
+
 from collections import defaultdict, namedtuple
 from itertools import product
 from typing import List, NamedTuple
 
+import numpy as np
 from iktos.logger import getLogger
 
 from . import constants
 from .math_utils import (
+    get_euclidean_distance_3d,
     get_vector,
     get_vector_angle,
-    get_euclidean_distance_3d,
     project_on_plane,
 )
-
 
 logger = getLogger(__name__)
 

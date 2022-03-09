@@ -5,6 +5,7 @@ Proprietary and confidential
 """
 
 from __future__ import absolute_import
+
 from builtins import filter
 from collections import namedtuple
 from typing import List, NamedTuple
@@ -14,12 +15,12 @@ from iktos.logger import getLogger
 from iktos.structure_utils.pdb.constants import CHARGED_RESIDUES
 
 try:
-    from openbabel.openbabel import (
+    from openbabel.openbabel import (  # openbabel 3
         OBAtom,
         OBAtomAtomIter,
         OBMolAtomIter,
         OBResidueAtomIter,
-    )  # openbabel 3
+    )
 except ModuleNotFoundError:
     from openbabel import (
         OBAtom,
@@ -41,7 +42,6 @@ from .utils import (
     ring_is_aromatic,
     ring_is_planar,
 )
-
 
 logger = getLogger(__name__)
 

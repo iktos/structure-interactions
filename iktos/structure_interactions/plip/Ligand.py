@@ -13,10 +13,9 @@ try:
 except ModuleNotFoundError:
     from openbabel import OBMolAtomIter  # openbabel 2 (warning in structure-utils)
 
-from .Mol import Mol
 from .math_utils import get_centroid, get_euclidean_distance_3d
+from .Mol import Mol
 from .utils import get_coords
-
 
 logger = getLogger(__name__)
 
