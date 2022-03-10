@@ -1,9 +1,3 @@
-"""
-Copyright (C) Iktos - All Rights Reserved
-Unauthorized copying of this file, via any medium is strictly prohibited
-Proprietary and confidential
-"""
-
 from __future__ import absolute_import
 import numpy as np
 from collections import defaultdict, namedtuple
@@ -32,7 +26,13 @@ def find_hydrophobics(
 
     Definition: pairs of atoms within HYDROPHOBIC_DIST_MAX
     """
-    data = namedtuple('Hydrophobic', 'ligand receptor distance')
+    # data = namedtuple('Hydrophobic', 'ligand receptor distance')
+
+    class data(NamedTuple):
+        name: str
+        receptor: str
+        distance: float
+
     pairings = []
     for rec, lig in product(hydrophobics_rec, hydrophobics_lig):
         if rec.atom_list[0].is_aromatic and lig.atom_list[0].is_aromatic:

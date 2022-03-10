@@ -16,7 +16,8 @@ from iktos.structure_interactions.InteractionProfiler import InteractionProfiler
 # Be very careful with custom naming, this might lead to errors
 # (e.g. a H named HO34 will be interpreted as Holmium by OpenBabel, leading to the detection of metal interactions)
 
-data_path = Path('data').absolute()
+here = Path(__file__).parent
+data_path = here / "data"
 
 protein_pdb_list = [
     data_path / 'f_0_prot.pdb',
