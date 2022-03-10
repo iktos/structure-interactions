@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import importlib
 from itertools import product
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from iktos.logger import getLogger
 
@@ -92,7 +92,7 @@ class InteractionProfiler:
     def analyse_complexes(
         self,
         rec_coords: str,
-        lig_coords: [List, str],
+        lig_coords: Union[List, str],
         lig_format: str = 'sdf',
         as_string: bool = True,
         refine: bool = True,
@@ -116,13 +116,13 @@ class InteractionProfiler:
         status = self._load_receptor(rec_coords, as_string=as_string)
         if not status:
             return False
-        contacts = []
+        contacts = []  # type: List
         if as_string:
             lig_blocks = lig_coords
         else:
             lig_blocks = file_to_blocks(lig_coords, fmt=lig_format)
         for lig in lig_blocks:
-            status = self._load_ligand(lig, lig_format=lig_format, as_string=as_string)
+            status = self._load_ligand(lig, lig_format=lig_format, as_string=True)
             if not status:
                 contacts.append({})
             else:
@@ -400,7 +400,7 @@ class InteractionProfiler:
         Parse contacts and return them as a list of dicts
         formatted for further analysis/drawing
         """
-        plip_dict = {}
+        plip_dict = {}  # type: Dict
         for contact in plip_list:
             contact_name = type(contact).__name__
             if contact_name == 'H_Bond':
