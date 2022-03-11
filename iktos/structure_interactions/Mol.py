@@ -1,19 +1,19 @@
 from __future__ import absolute_import
+
 from builtins import filter
-from collections import namedtuple
-from typing import List, NamedTuple
+from typing import Any, List, NamedTuple
 
 import numpy as np
 from iktos.logger import getLogger
 from iktos.structure_utils.pdb.constants import CHARGED_RESIDUES
 
 try:
-    from openbabel.openbabel import (
+    from openbabel.openbabel import (  # openbabel 3
         OBAtom,
         OBAtomAtomIter,
         OBMolAtomIter,
         OBResidueAtomIter,
-    )  # openbabel 3
+    )
 except ModuleNotFoundError:
     from openbabel import (
         OBAtom,
@@ -36,7 +36,6 @@ from .utils import (
     ring_is_planar,
 )
 
-
 logger = getLogger(__name__)
 
 
@@ -51,13 +50,19 @@ class Mol:
     def identify_functional_groups(self):
         raise NotImplementedError
 
-    def find_rings(self, obmol) -> List[NamedTuple]:
+    def find_rings(self, obmol) -> List:
         """Finds aromatic rings, i.e. rings detected by OpenBabel
         as aromatic or sufficiently planar.
 
         Atom list contains all atoms in ring
         """
-        data = namedtuple('aromatic_ring', 'atom_list normal center type')
+
+        class data(NamedTuple):
+            atom_list: List[Atom]
+            normal: Any
+            center: Any
+            type: str
+
         aromatic_amino = ['TYR', 'TRP', 'HIS', 'HID', 'HIE', 'HIP', 'HSD', 'HSE', 'PHE']
         all_rings = obmol.GetSSSR()
         selection = []
@@ -89,14 +94,17 @@ class Mol:
         logger.debug(f'Found {len(selection)} aromatic ring(s)')
         return selection
 
-    def find_hydrophobics(self, obatoms: List[OBAtom]) -> List[NamedTuple]:
+    def find_hydrophobics(self, obatoms: List[OBAtom]) -> List:
         """Finds all hydrophobic atoms, i.e. carbon and sulfur atoms
         which have only carbons/sulfurs/hydrogens as direct neighbors
         + Cl and F. Sulfur atoms that are not SP3 are excluded.
 
         Atom list contains [C|S|Cl|F]
         """
-        data = namedtuple('hydrophobic', 'atom_list')
+
+        class data(NamedTuple):
+            atom_list: List[Atom]
+
         selection = []
         obatoms_filtered = filter(
             lambda obatom: (
@@ -115,12 +123,16 @@ class Mol:
         logger.debug(f'Found {len(selection)} hydrophobic atoms')
         return selection
 
-    def find_h_bond_acceptors(self, obatoms: List[OBAtom]) -> List[NamedTuple]:
+    def find_h_bond_acceptors(self, obatoms: List[OBAtom]) -> List:
         """Finds H-bond acceptors; excluding halogens and sulfur.
         Atom list contains [A]
         Stores information about A's neighbours to check angle about A
         """
-        data = namedtuple('hbond_acceptor', 'atom_list neighbours')
+
+        class data(NamedTuple):
+            atom_list: List[Atom]
+            neighbours: List[Atom]
+
         selection = []
         obatoms_filtered = filter(
             lambda obatom: (obatom.IsHbondAcceptor() or atom_has_lone_pair(obatom))
@@ -135,12 +147,16 @@ class Mol:
         logger.debug(f'Found {len(selection)} H-bond acceptors')
         return selection
 
-    def find_h_bond_donors(self, obatoms: List[OBAtom]) -> List[NamedTuple]:
+    def find_h_bond_donors(self, obatoms: List[OBAtom]) -> List:
         """Finds strong and weak H-bond donors (i.e. with polarised C-H bonds).
 
         Atom list contains [D], [H]
         """
-        data = namedtuple('hbond_donor', 'atom_list type')
+
+        class data(NamedTuple):
+            atom_list: List[Atom]
+            type: str
+
         selection = []
         # Loop over atoms flagged by OpenBabel as H-bond donor
         obatoms_filtered = filter(lambda obatom: obatom.IsHbondDonor(), obatoms)
@@ -173,13 +189,17 @@ class Mol:
         logger.debug(f'Found {len(selection)} H-bond donor pairs (incl. weak)')
         return selection
 
-    def find_x_bond_acceptors(self, obatoms: List[OBAtom]) -> List[NamedTuple]:
+    def find_x_bond_acceptors(self, obatoms: List[OBAtom]) -> List:
         """Finds X-bond acceptors (look for O, N, S with lone pair).
 
         Atom list contains [A]
         Store information about A's neighbours to check angle later
         """
-        data = namedtuple('xbond_acceptor', 'atom_list neighbours')
+
+        class data(NamedTuple):
+            atom_list: List[Atom]
+            neighbours: List[Atom]
+
         selection = []
         obatoms_filtered = filter(
             lambda obatom: obatom.GetAtomicNum() in [7, 8, 16], obatoms
@@ -195,13 +215,16 @@ class Mol:
         logger.debug(f'Found {len(selection)} halogen bond acceptor(s)')
         return selection
 
-    def find_halogens(self, obatoms: List[OBAtom]) -> List[NamedTuple]:
+    def find_halogens(self, obatoms: List[OBAtom]) -> List:
         """Finds halogens (C-X, with X = F, Cl, Br, I) for the detection of halogen
         bonds (except for F) and multipolar interactions (only for F).
 
         Atom list contains [C], [X]
         """
-        data = namedtuple('halogen', 'atom_list')
+
+        class data(NamedTuple):
+            atom_list: List[Atom]
+
         selection = []
         obatoms_filtered = filter(
             lambda obatom: obatom.GetAtomicNum() in [9, 17, 35, 53], obatoms
@@ -213,7 +236,7 @@ class Mol:
         logger.debug(f'Found {len(selection)} halogen(s)')
         return selection
 
-    def find_pi_carbons(self, obatoms: List[OBAtom]) -> List[NamedTuple]:
+    def find_pi_carbons(self, obatoms: List[OBAtom]) -> List:
         """Finds pi carbons, e.g. amide, guanidinium.
         Ester and acid are excluded for now, carbamate are included
         (at least 1 N amongst neighbours).
@@ -221,7 +244,13 @@ class Mol:
         Atom list contains the central C atom
         Store the same info as for aromatic rings (center + normal)
         """
-        data = namedtuple('pi_group', 'atom_list normal center type')
+
+        class data(NamedTuple):
+            atom_list: List[Atom]
+            normal: Any
+            center: Any
+            type: str
+
         selection = []
         obatoms_filtered = filter(
             lambda obatom: obatom.GetAtomicNum() == 6
@@ -250,12 +279,16 @@ class Mol:
         logger.debug(f'Found {len(selection)} pi-carbon(s)')
         return selection
 
-    def find_metals(self, obatoms: List[OBAtom]) -> List[NamedTuple]:
+    def find_metals(self, obatoms: List[OBAtom]) -> List:
         """Finds metals.
 
         Atom list contains [M]
         """
-        data = namedtuple('metal', 'atom_list location')
+
+        class data(NamedTuple):
+            atom_list: List[Atom]
+            location: Any
+
         selection = []
         obatoms_filtered = filter(
             lambda obatom: obatom.IsMetal() or obatom.GetType() in constants.METAL_IONS,
@@ -266,14 +299,18 @@ class Mol:
         logger.debug(f'Found {len(selection)} metal atom(s)')
         return selection
 
-    def find_metal_binders(self, obatoms: List[OBAtom]) -> List[NamedTuple]:
+    def find_metal_binders(self, obatoms: List[OBAtom]) -> List:
         """Finds atoms/groups that can be involved in binding metal ions
         e.g. oxygen from carboxylate, phophoryl, phenolate, alcohol;
         nitrogen from imidazole; sulfur from thiolate.
 
         Atom list contains [D] (only 1 atom per binder)
         """
-        data = namedtuple('metal_binder', 'atom_list location')
+
+        class data(NamedTuple):
+            atom_list: List[Atom]
+            location: Any
+
         selection = []
         obatoms_filtered = filter(lambda obatom: atom_has_lone_pair(obatom), obatoms)
         for obatom in obatoms_filtered:
@@ -281,7 +318,7 @@ class Mol:
         logger.debug(f'Found {len(selection)} metal binder(s)')
         return selection
 
-    def find_charged_atoms(self, obatoms: List[OBAtom]) -> List[NamedTuple]:
+    def find_charged_atoms(self, obatoms: List[OBAtom]) -> List:
         """Finds charged atoms/groups.
 
         Ref: 'Cation-pi interactions in ligand recognition and catalysis'
@@ -289,7 +326,13 @@ class Mol:
 
         Atom list contains atoms in charged group, in no particular order
         """
-        data = namedtuple('charged', 'atom_list charge center fgroup')
+
+        class data(NamedTuple):
+            atom_list: List[Atom]
+            charge: str
+            center: Any
+            fgroup: str
+
         selection = []
         for obatom in obatoms:
             charge = None

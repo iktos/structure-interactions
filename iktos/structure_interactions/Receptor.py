@@ -4,7 +4,6 @@ from iktos.logger import getLogger
 
 from .Mol import Mol
 
-
 logger = getLogger(__name__)
 
 

@@ -4,7 +4,6 @@ from iktos.logger import getLogger
 
 from .utils import get_coords
 
-
 logger = getLogger(__name__)
 
 
