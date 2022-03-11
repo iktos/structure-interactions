@@ -65,6 +65,7 @@ exclude = '''
 '''
 include = '\.pyi?$'
 line-length = 88
+skip-string-normalization = true
 target-version = ['py37']
 
 [tool.isort]
