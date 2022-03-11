@@ -19,19 +19,20 @@ from .math_utils import (
 logger = getLogger(__name__)
 
 
+class Hydrophobic(NamedTuple):
+    ligand: List[Atom]
+    receptor: List[Atom]
+    distance: float
+
+
 def find_hydrophobics(
     hydrophobics_rec: List, hydrophobics_lig: List[NamedTuple]
-) -> List:
+) -> List[Hydrophobic]:
     """Detects hydrophobic interactions between
     hydrophobic atoms (C, S, Cl or F), excluding interactions between aromatic atoms.
 
     Definition: pairs of atoms within HYDROPHOBIC_DIST_MAX
     """
-
-    class data(NamedTuple):
-        ligand: List[Atom]
-        receptor: List[Atom]
-        distance: float
 
     pairings = []
     for rec, lig in product(hydrophobics_rec, hydrophobics_lig):
@@ -42,25 +43,30 @@ def find_hydrophobics(
         )
         if not constants.MIN_DIST <= dist <= constants.HYDROPHOBIC_DIST_MAX:
             continue
-        contact = data(ligand=lig.atom_list, receptor=rec.atom_list, distance=dist)
+        contact = Hydrophobic(
+            ligand=lig.atom_list, receptor=rec.atom_list, distance=dist
+        )
         pairings.append(contact)
     return pairings
 
 
-def find_pi_stackings(groups_rec: List, groups_lig: List[NamedTuple]) -> List:
+class Pi_Stacking(NamedTuple):
+    ligand: List[Atom]
+    receptor: List[Atom]
+    distance: float
+    angle: float
+    offset: float
+    type: str
+
+
+def find_pi_stackings(
+    groups_rec: List, groups_lig: List[NamedTuple]
+) -> List[Pi_Stacking]:
     """Detects pi-stacking interactions between aromatic rings.
 
     Definiton: pairs of rings within PISTACKING_DIST_MAX,
         either // or |-- or |/, and offset <= PISTACKING_OFFSET_MAX
     """
-
-    class data(NamedTuple):
-        ligand: List[Atom]
-        receptor: List[Atom]
-        distance: float
-        angle: float
-        offset: float
-        type: str
 
     pairings = []
     for rec, lig in product(groups_rec, groups_lig):
@@ -96,7 +102,7 @@ def find_pi_stackings(groups_rec: List, groups_lig: List[NamedTuple]) -> List:
                 f'angle {angle}, distance {dist}'
             )
             continue
-        contact = data(
+        contact = Pi_Stacking(
             ligand=lig.atom_list,
             receptor=rec.atom_list,
             distance=dist,
@@ -108,21 +114,22 @@ def find_pi_stackings(groups_rec: List, groups_lig: List[NamedTuple]) -> List:
     return pairings
 
 
-def find_pi_amides(groups_rec: List, groups_lig: List[NamedTuple]) -> List:
+class Pi_Amide(NamedTuple):
+    ligand: List[Atom]
+    receptor: List[Atom]
+    distance: float
+    angle: float
+    offset: float
+    type: str
+
+
+def find_pi_amides(groups_rec: List, groups_lig: List[NamedTuple]) -> List[Pi_Amide]:
     """Detects pi-stacking interactions between pi systems
     (aromatic ring + amide/guanidinium/carbamate).
 
     Definiton: pairs of (ring, pi-group) within PIOTHER_DIST_MAX,
         parallel (angle between normals approx 0), and offset <= PIOTHER_OFFSET_MAX
     """
-
-    class data(NamedTuple):
-        ligand: List[Atom]
-        receptor: List[Atom]
-        distance: float
-        angle: float
-        offset: float
-        type: str
 
     pairings = []
     for rec, lig in product(groups_rec, groups_lig):
@@ -152,7 +159,7 @@ def find_pi_amides(groups_rec: List, groups_lig: List[NamedTuple]) -> List:
                 f'angle {angle}, distance {dist}'
             )
             continue
-        contact = data(
+        contact = Pi_Amide(
             ligand=lig.atom_list,
             receptor=rec.atom_list,
             distance=dist,
@@ -164,19 +171,22 @@ def find_pi_amides(groups_rec: List, groups_lig: List[NamedTuple]) -> List:
     return pairings
 
 
-def find_pi_cations(rings: List, charged_atoms: List, pi_on_prot: bool = False) -> List:
+class Pi_Cation(NamedTuple):
+    ligand: List[Atom]
+    receptor: List[Atom]
+    distance: float
+    offset: float
+
+
+def find_pi_cations(
+    rings: List, charged_atoms: List, pi_on_prot: bool = False
+) -> List[Pi_Cation]:
     """Detects pi-cation interactions between aromatic rings
     and positively charged groups.
 
     Definition: pairs of (ring, charged atom)
         within PIOTHER_DIST_MAX and offset < PIOTHER_OFFSET_MAX
     """
-
-    class data(NamedTuple):
-        ligand: List[Atom]
-        receptor: List[Atom]
-        distance: float
-        offset: float
 
     pairings = []
     for r, c in product(rings, charged_atoms):
@@ -195,32 +205,33 @@ def find_pi_cations(rings: List, charged_atoms: List, pi_on_prot: bool = False) 
             )
             continue
         if pi_on_prot:
-            contact = data(
+            contact = Pi_Cation(
                 ligand=c.atom_list, receptor=r.atom_list, distance=dist, offset=offset
             )
         else:
-            contact = data(
+            contact = Pi_Cation(
                 ligand=r.atom_list, receptor=c.atom_list, distance=dist, offset=offset
             )
         pairings.append(contact)
     return pairings
 
 
+class Pi_Hydrophobic(NamedTuple):
+    ligand: List[Atom]
+    receptor: List[Atom]
+    distance: float
+    offset: float
+
+
 def find_pi_hydrophobics(
     rings: List[NamedTuple], hydrophobics: List, pi_on_prot: bool = False
-) -> List:
+) -> List[Pi_Hydrophobic]:
     """Detects pi-hydrophobic interactions between aromatic rings
     and hydrophobic atoms (C, S, F, Cl).
 
     Definition: pairs of (ring, SP3 hydrophobic atom)
         within PIOTHER_DIST_MAX and offset < PIOTHER_OFFSET_MAX
     """
-
-    class data(NamedTuple):
-        ligand: List[Atom]
-        receptor: List[Atom]
-        distance: float
-        offset: float
 
     pairings = []
     for r, h in product(rings, hydrophobics):
@@ -240,20 +251,29 @@ def find_pi_hydrophobics(
             )
             continue
         if pi_on_prot:
-            contact = data(
+            contact = Pi_Hydrophobic(
                 ligand=h.atom_list, receptor=r.atom_list, distance=dist, offset=offset
             )
         else:
-            contact = data(
+            contact = Pi_Hydrophobic(
                 ligand=r.atom_list, receptor=h.atom_list, distance=dist, offset=offset
             )
         pairings.append(contact)
     return pairings
 
 
+class H_Bond(NamedTuple):
+    ligand: List[Atom]
+    receptor: List[Atom]
+    distance_ah: float
+    distance_ad: float
+    angle_dha: float
+    type: str
+
+
 def find_h_bonds(
     acceptors: List, donor_pairs: List[NamedTuple], don_on_prot: bool = True
-) -> List:
+) -> List[H_Bond]:
     """Detects H-bonds between acceptors and donor pairs.
 
     Definition: pairs of (H-bond acceptor and H-bond donor) within
@@ -263,14 +283,6 @@ def find_h_bonds(
 
     Note: a.atom_list = [A], d.atom_list = [D, H]
     """
-
-    class data(NamedTuple):
-        ligand: List[Atom]
-        receptor: List[Atom]
-        distance_ah: float
-        distance_ad: float
-        angle_dha: float
-        type: str
 
     pairings = []
     for a, d in product(acceptors, donor_pairs):
@@ -309,7 +321,7 @@ def find_h_bonds(
             l, r = a, d
         else:
             l, r = d, a
-        contact = data(
+        contact = H_Bond(
             ligand=l.atom_list,
             receptor=r.atom_list,
             distance_ah=dist_ah,
@@ -321,7 +333,14 @@ def find_h_bonds(
     return pairings
 
 
-def find_x_bonds(acceptors: List, donor_pairs: List[NamedTuple]) -> List:
+class Halogen_Bond(NamedTuple):
+    ligand: List[Atom]
+    receptor: List[Atom]
+    distance_ax: float
+    angle_axd: float
+
+
+def find_x_bonds(acceptors: List, donor_pairs: List[NamedTuple]) -> List[Halogen_Bond]:
     """Detects halogen bonds between acceptors and donor pairs (excluding F).
 
     Definition: pairs of (acceptor and C-X pair) within
@@ -333,12 +352,6 @@ def find_x_bonds(acceptors: List, donor_pairs: List[NamedTuple]) -> List:
 
     Note: a.atom_list = [A], d.atom_list = [D, X]
     """
-
-    class data(NamedTuple):
-        ligand: List[Atom]
-        receptor: List[Atom]
-        distance_ax: float
-        angle_axd: float
 
     pairings = []
     for a, d in product(acceptors, donor_pairs):
@@ -371,7 +384,7 @@ def find_x_bonds(acceptors: List, donor_pairs: List[NamedTuple]) -> List:
                 break
         if not angle_ok:
             continue
-        contact = data(
+        contact = Halogen_Bond(
             ligand=d.atom_list,
             receptor=a.atom_list,
             distance_ax=dist,
@@ -381,9 +394,17 @@ def find_x_bonds(acceptors: List, donor_pairs: List[NamedTuple]) -> List:
     return pairings
 
 
+class Multipolar(NamedTuple):
+    ligand: List[Atom]
+    receptor: List[Atom]
+    distance_ax: float
+    angle_axd: float
+    angle_xay: float
+
+
 def find_multpipolar_interactions(
     acceptors: List[NamedTuple], donor_pairs: List
-) -> List:
+) -> List[Multipolar]:
     """Detects orthogonal multipolar interactions between F/Cl
     and polarised Csp2 (e.g. amide).
 
@@ -393,13 +414,6 @@ def find_multpipolar_interactions(
 
     Note: a.atom_list = [C], d.atom_list = [D, X]
     """
-
-    class data(NamedTuple):
-        ligand: List[Atom]
-        receptor: List[Atom]
-        distance_ax: float
-        angle_axd: float
-        angle_xay: float
 
     pairings = []
     for a, d in product(acceptors, donor_pairs):
@@ -429,7 +443,7 @@ def find_multpipolar_interactions(
             )
             continue
 
-        contact = data(
+        contact = Multipolar(
             ligand=d.atom_list,
             receptor=a.atom_list,
             distance_ax=dist,
@@ -440,19 +454,20 @@ def find_multpipolar_interactions(
     return pairings
 
 
+class Salt_Bridge(NamedTuple):
+    ligand: List[Atom]
+    receptor: List[Atom]
+    distance: float
+
+
 def find_salt_bridges(
     charged_atoms_rec: List, charged_atoms_lig: List[NamedTuple]
-) -> List:
+) -> List[Salt_Bridge]:
     """Detects salt bridges, i.e. interaction between positively charged
     and negatively charged groups.
 
     Definition: pairs of charged groups/atoms within SALTBRIDGE_DIST_MAX
     """
-
-    class data(NamedTuple):
-        ligand: List[Atom]
-        receptor: List[Atom]
-        distance: float
 
     pairings = []
     for group_rec, group_lig in product(charged_atoms_rec, charged_atoms_lig):
@@ -461,11 +476,21 @@ def find_salt_bridges(
         dist = get_euclidean_distance_3d(group_rec.center, group_lig.center)
         if not constants.MIN_DIST <= dist <= constants.SALTBRIDGE_DIST_MAX:
             continue
-        contact = data(
+        contact = Salt_Bridge(
             ligand=group_lig.atom_list, receptor=group_rec.atom_list, distance=dist
         )
         pairings.append(contact)
     return pairings
+
+
+class Water_Bridge(NamedTuple):
+    ligand: List[Atom]
+    receptor: List[Atom]
+    water: List[Atom]
+    distance_aw: float
+    distance_dw: float
+    angle_dhw: float
+    angle_awh: float
 
 
 def find_water_bridges(
@@ -473,7 +498,7 @@ def find_water_bridges(
     donor_pairs: List,
     waters: List,
     don_on_prot: bool = True,
-) -> List:
+) -> List[Water_Bridge]:
     """Detects water-bridged hydrogen bonds between ligand and protein
 
     Definition: pairs of (H-bond acceptor and H-bond donor pair)
@@ -484,15 +509,6 @@ def find_water_bridges(
 
     Note: a.atom_list = [A], d.atom_list = [D, H]
     """
-
-    class data(NamedTuple):
-        ligand: List[Atom]
-        receptor: List[Atom]
-        water: List[Atom]
-        distance_aw: float
-        distance_dw: float
-        angle_dhw: float
-        angle_awh: float
 
     pairings = []
     for a, d in product(acceptors, donor_pairs):
@@ -559,7 +575,7 @@ def find_water_bridges(
                 l, r = a, d
             else:
                 l, r = d, a
-            contact = data(
+            contact = Water_Bridge(
                 ligand=l.atom_list,
                 receptor=r.atom_list,
                 water=w.atom_list,
@@ -572,13 +588,24 @@ def find_water_bridges(
     return pairings
 
 
+class Metal_Complex(NamedTuple):
+    metal: List[Atom]
+    ligand: List[Atom]
+    receptor: List[Atom]
+    coordination_num: Any
+    rms: Any
+    geometry: Any
+    num_partners: Any
+    complex_num: Any
+
+
 def find_metal_complexes(  # noqa: C901
     metals_rec: List,
     metal_binders_rec: List[NamedTuple],
     metals_lig: List,
     metal_binders_lig: List[NamedTuple],
     metal_binders_wat: List[NamedTuple],
-) -> List:
+) -> List[Metal_Complex]:
     """Detects metal-atom interactions between any metal (ligand or receptor side)
     and any appropriate group (ligand or receptor side), as well as water.
 
@@ -589,16 +616,6 @@ def find_metal_complexes(  # noqa: C901
 
     TODO: refacto
     """
-
-    class data(NamedTuple):
-        metal: List[Atom]
-        ligand: List[Atom]
-        receptor: List[Atom]
-        coordination_num: Any
-        rms: Any
-        geometry: Any
-        num_partners: Any
-        complex_num: Any
 
     pairings = []
     metals = metals_lig + metals_rec
@@ -769,7 +786,7 @@ def find_metal_complexes(  # noqa: C901
                 receptor_binders.append(b.atom_list[0])
             else:
                 ligand_binders.append(b.atom_list[0])
-        contact = data(
+        contact = Metal_Complex(
             metal=m.atom_list,
             ligand=ligand_binders,
             receptor=receptor_binders,
