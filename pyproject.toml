@@ -16,6 +16,7 @@ secondary = true
 url = "https://pypi.golgoth.iktos.ai/simple"
 
 [tool.poetry.dependencies]
+coverage = "*"
 iktos-logger = "^2.0.2"
 iktos-structure-analysis = "~2.3.0"
 iktos-structure-utils = "~3.0"
@@ -46,7 +47,7 @@ pc-check-black = "black --check"
 pc-isort = "isort "
 pc-linter = "flake8 "
 pc-mypy = "mypy "
-test = "python -m pytest --cov-report=term --cov-report=html:cov_html --cov ./iktos"
+test = "python -m pytest --cov-report=term --cov-report=html:cov_html --junitxml=junit.xml --cov ./iktos"
 
 [tool.black]
 exclude = '''

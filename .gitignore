@@ -16,3 +16,4 @@ cov_html
 *.ipynb
 .idea
 .vscode
+junit.xml

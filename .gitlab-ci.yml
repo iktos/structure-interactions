@@ -10,3 +10,18 @@ include:
 .python:
   tags:
     - python-structure-based
+
+test_poetry:
+  extends: .test_poetry
+  script:
+    - poetry config --local virtualenvs.in-project true
+    - poetry run task test
+    - poetry run coverage xml
+  artifacts:
+    when: always
+    paths:
+      - junit.xml
+      - coverage.xml
+    reports:
+      junit: junit.xml
+      cobertura: coverage.xml
