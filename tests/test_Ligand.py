@@ -8,7 +8,7 @@ from iktos.structure_interactions.Ligand import Ligand
 from iktos.structure_interactions.utils import read_mol
 
 
-def test_identify_functional_groups():
+def test_identify_functional_groups_5N9T():
     obmol = read_mol(
         'tests/data/lig_5N9T.sdf',
         as_string=False,
@@ -27,6 +27,8 @@ def test_identify_functional_groups():
     assert len(ligand.metal_binders) == 5
     assert len(ligand.metals) == 0
 
+
+def test_identify_functional_groups_3S3M():
     obmol = read_mol(
         'tests/data/lig_3S3M.sdf',
         as_string=False,
