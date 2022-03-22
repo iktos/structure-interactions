@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from itertools import product
-from typing import Any, List, NamedTuple
+from typing import List, NamedTuple
 
 import numpy as np
 from iktos.logger import getLogger
@@ -26,12 +26,15 @@ class Hydrophobic(NamedTuple):
 
 
 def find_hydrophobics(
-    hydrophobics_rec: List, hydrophobics_lig: List[NamedTuple]
+    hydrophobics_rec: List,
+    hydrophobics_lig: List,
+    distance_min: float,
+    distance_max: float,
 ) -> List[Hydrophobic]:
     """Detects hydrophobic interactions between
     hydrophobic atoms (C, S, Cl or F), excluding interactions between aromatic atoms.
 
-    Definition: pairs of atoms within HYDROPHOBIC_DIST_MAX
+    Definition: pairs of atoms within distance_max
     """
 
     pairings = []
@@ -41,7 +44,7 @@ def find_hydrophobics(
         dist = get_euclidean_distance_3d(
             rec.atom_list[0].coords, lig.atom_list[0].coords
         )
-        if not constants.MIN_DIST <= dist <= constants.HYDROPHOBIC_DIST_MAX:
+        if not distance_min <= dist <= distance_max:
             continue
         contact = Hydrophobic(
             ligand=lig.atom_list, receptor=rec.atom_list, distance=dist
@@ -60,31 +63,35 @@ class Pi_Stacking(NamedTuple):
 
 
 def find_pi_stackings(
-    groups_rec: List, groups_lig: List[NamedTuple]
+    groups_rec: List,
+    groups_lig: List,
+    distance_min: float,
+    distance_max_t: float,
+    distance_max_f: float,
+    distance_max_p: float,
+    angle_dev: float,
+    offset_max: float,
 ) -> List[Pi_Stacking]:
     """Detects pi-stacking interactions between aromatic rings.
 
-    Definiton: pairs of rings within PISTACKING_DIST_MAX,
-        either // or |-- or |/, and offset <= PISTACKING_OFFSET_MAX
+    Definiton: pairs of rings within distance_max,
+        either // or |-- or |/, and offset <= offset_max
     """
 
     pairings = []
     for rec, lig in product(groups_rec, groups_lig):
         dist = get_euclidean_distance_3d(rec.center, lig.center)
-        if not constants.MIN_DIST <= dist <= constants.PISTACKING_DIST_MAX_T:
+        if not distance_min <= dist <= distance_max_t:
             continue
 
         # Take the smallest of two angles, depending on direction of normal
         angle_tmp = get_vector_angle(rec.normal, lig.normal)
         angle = min(angle_tmp, 180 - angle_tmp)
-        if (
-            0 <= angle <= constants.PISTACKING_ANG_DEV
-            and dist <= constants.PISTACKING_DIST_MAX_P
-        ):
+        if 0 <= angle <= angle_dev and dist <= distance_max_p:
             type = 'P'
-        elif angle >= 90 - constants.PISTACKING_ANG_DEV:
+        elif angle >= 90 - angle_dev:
             type = 'T'
-        elif dist <= constants.PISTACKING_DIST_MAX_F:
+        elif dist <= distance_max_f:
             type = 'F'
         else:
             continue
@@ -96,7 +103,7 @@ def find_pi_stackings(
             get_euclidean_distance_3d(proj1, lig.center),
             get_euclidean_distance_3d(proj2, rec.center),
         )
-        if not offset <= constants.PISTACKING_OFFSET_MAX:
+        if not offset <= offset_max:
             logger.debug(
                 f'Pi-staking ignored due to large offset {offset}, '
                 f'angle {angle}, distance {dist}'
@@ -123,24 +130,31 @@ class Pi_Amide(NamedTuple):
     type: str
 
 
-def find_pi_amides(groups_rec: List, groups_lig: List[NamedTuple]) -> List[Pi_Amide]:
+def find_pi_amides(
+    groups_rec: List,
+    groups_lig: List,
+    distance_min: float,
+    distance_max: float,
+    offset_max: float,
+    angle_dev: float,
+) -> List[Pi_Amide]:
     """Detects pi-stacking interactions between pi systems
     (aromatic ring + amide/guanidinium/carbamate).
 
-    Definiton: pairs of (ring, pi-group) within PIOTHER_DIST_MAX,
-        parallel (angle between normals approx 0), and offset <= PIOTHER_OFFSET_MAX
+    Definiton: pairs of (ring, pi-group) within distance_max,
+        parallel (angle between normals approx 0), and offset <= offset_max
     """
 
     pairings = []
     for rec, lig in product(groups_rec, groups_lig):
         dist = get_euclidean_distance_3d(rec.center, lig.center)
-        if not constants.MIN_DIST <= dist <= constants.PIOTHER_DIST_MAX:
+        if not distance_min <= dist <= distance_max:
             continue
 
         # Take the smallest of two angles, depending on direction of normal
         angle_tmp = get_vector_angle(rec.normal, lig.normal)
         angle = min(angle_tmp, 180 - angle_tmp)
-        if not 0 <= angle <= constants.PISTACKING_ANG_DEV:
+        if not 0 <= angle <= angle_dev:
             logger.debug(
                 f'Pi-amide ignored due to large angle {angle}, distance {dist}'
             )
@@ -153,7 +167,7 @@ def find_pi_amides(groups_rec: List, groups_lig: List[NamedTuple]) -> List[Pi_Am
             get_euclidean_distance_3d(proj1, lig.center),
             get_euclidean_distance_3d(proj2, rec.center),
         )
-        if not offset <= constants.PIOTHER_OFFSET_MAX:
+        if not offset <= offset_max:
             logger.debug(
                 f'Pi-amide ignored due to large offset {offset}, '
                 f'angle {angle}, distance {dist}'
@@ -179,13 +193,18 @@ class Pi_Cation(NamedTuple):
 
 
 def find_pi_cations(
-    rings: List, charged_atoms: List, pi_on_prot: bool = False
+    rings: List,
+    charged_atoms: List,
+    distance_min: float,
+    distance_max: float,
+    offset_max: float,
+    pi_on_prot: bool = False,
 ) -> List[Pi_Cation]:
     """Detects pi-cation interactions between aromatic rings
     and positively charged groups.
 
     Definition: pairs of (ring, charged atom)
-        within PIOTHER_DIST_MAX and offset < PIOTHER_OFFSET_MAX
+        within piother_dist_max and offset < offset_max
     """
 
     pairings = []
@@ -193,13 +212,13 @@ def find_pi_cations(
         if c.charge != 'positive':
             continue
         dist = get_euclidean_distance_3d(r.center, c.center)
-        if not constants.MIN_DIST <= dist <= constants.PIOTHER_DIST_MAX:
+        if not distance_min <= dist <= distance_max:
             continue
 
         # Project the center of charge onto the ring and measure distance to ring center
         proj = project_on_plane(r.normal, r.center, c.center)
         offset = get_euclidean_distance_3d(proj, r.center)
-        if not offset <= constants.PIOTHER_OFFSET_MAX:
+        if not offset <= offset_max:
             logger.debug(
                 f'Pi-cation ignored due to large offset {offset}, ' f'distance {dist}'
             )
@@ -224,13 +243,18 @@ class Pi_Hydrophobic(NamedTuple):
 
 
 def find_pi_hydrophobics(
-    rings: List[NamedTuple], hydrophobics: List, pi_on_prot: bool = False
+    rings: List,
+    hydrophobics: List,
+    distance_min: float,
+    distance_max: float,
+    offset_max: float,
+    pi_on_prot: bool = False,
 ) -> List[Pi_Hydrophobic]:
     """Detects pi-hydrophobic interactions between aromatic rings
     and hydrophobic atoms (C, S, F, Cl).
 
     Definition: pairs of (ring, SP3 hydrophobic atom)
-        within PIOTHER_DIST_MAX and offset < PIOTHER_OFFSET_MAX
+        within piother_dist_max and offset < offset_max
     """
 
     pairings = []
@@ -238,13 +262,13 @@ def find_pi_hydrophobics(
         if h.atom_list[0].hybridisation != 3:
             continue
         dist = get_euclidean_distance_3d(r.center, h.atom_list[0].coords)
-        if not constants.MIN_DIST <= dist <= constants.PIOTHER_DIST_MAX:
+        if not distance_min <= dist <= distance_max:
             continue
 
         # Project the hydrophobic atom onto ring and measure distance to ring center
         proj = project_on_plane(r.normal, r.center, h.atom_list[0].coords)
         offset = get_euclidean_distance_3d(proj, r.center)
-        if not offset <= constants.PIOTHER_OFFSET_MAX:
+        if not offset <= offset_max:
             logger.debug(
                 f'Pi-hydrophobic ignored due to large offset {offset}, '
                 f'distance {dist}'
@@ -272,13 +296,19 @@ class H_Bond(NamedTuple):
 
 
 def find_h_bonds(
-    acceptors: List, donor_pairs: List[NamedTuple], don_on_prot: bool = True
+    acceptors: List,
+    donor_pairs: List,
+    distance_min: float,
+    distance_max: float,
+    donor_angle_min: float,
+    acceptor_angle_min: float,
+    donor_on_prot: bool = True,
 ) -> List[H_Bond]:
     """Detects H-bonds between acceptors and donor pairs.
 
     Definition: pairs of (H-bond acceptor and H-bond donor) within
-        HBOND_DIST_MAX, DHA angle >= HBOND_DON_ANGLE_MIN
-        and each YAD angle >= HBOND_ACC_ANGLE_MIN (Y are A's neighbours,
+        hbond_dist_max, DHA angle >= donor_angle_min
+        and each YAD angle >= acceptor_angle_min (Y are A's neighbours,
         this check is to ensure the H-bond is on the lone pair side of A)
 
     Note: a.atom_list = [A], d.atom_list = [D, H]
@@ -289,7 +319,7 @@ def find_h_bonds(
         dist_ad = get_euclidean_distance_3d(
             a.atom_list[0].coords, d.atom_list[0].coords
         )
-        if not constants.MIN_DIST <= dist_ad <= constants.HBOND_DIST_MAX:
+        if not distance_min <= dist_ad <= distance_max:
             continue
         dist_ah = get_euclidean_distance_3d(
             a.atom_list[0].coords, d.atom_list[1].coords
@@ -297,7 +327,7 @@ def find_h_bonds(
         vec_hd = get_vector(d.atom_list[1].coords, d.atom_list[0].coords)
         vec_ha = get_vector(d.atom_list[1].coords, a.atom_list[0].coords)
         angle_dha = get_vector_angle(vec_hd, vec_ha)
-        if not angle_dha >= constants.HBOND_DON_ANGLE_MIN:
+        if not angle_dha >= donor_angle_min:
             logger.debug(
                 f'H-bond ignored due to small D-H--A angle {angle_dha}, '
                 f'distance {dist_ad}'
@@ -308,7 +338,7 @@ def find_h_bonds(
             vec_ay = get_vector(a.atom_list[0].coords, y.coords)
             vec_ad = get_vector(a.atom_list[0].coords, d.atom_list[0].coords)
             angle_yad = get_vector_angle(vec_ay, vec_ad)
-            if not angle_yad >= constants.HBOND_ACC_ANGLE_MIN:
+            if not angle_yad >= acceptor_angle_min:
                 angle_ok = False
                 logger.debug(
                     f'H-bond ignored due to small Y-A--D angle {angle_yad}, '
@@ -317,7 +347,7 @@ def find_h_bonds(
                 break
         if not angle_ok:
             continue
-        if don_on_prot:
+        if donor_on_prot:
             l, r = a, d
         else:
             l, r = d, a
@@ -340,15 +370,22 @@ class Halogen_Bond(NamedTuple):
     angle_axd: float
 
 
-def find_x_bonds(acceptors: List, donor_pairs: List[NamedTuple]) -> List[Halogen_Bond]:
+def find_x_bonds(
+    acceptors: List,
+    donor_pairs: List,
+    distance_min: float,
+    distance_max: float,
+    donor_angle_min: float,
+    acceptor_angle_min: float,
+) -> List[Halogen_Bond]:
     """Detects halogen bonds between acceptors and donor pairs (excluding F).
 
     Definition: pairs of (acceptor and C-X pair) within
-        HBOND_DIST_MAX, DXA angle >= XBOND_DON_ANGLE_MIN
-        and each YAX angle >= XBOND_ACC_ANGLE_MIN (Y are A's neighbours,
+        xbond_dist_max, DXA angle >= donor_angle_min
+        and each YAX angle >= acceptor_angle_min (Y are A's neighbours,
         this check is to ensure the X-bond is on the lone pair side of A)
 
-    https://www.pnas.org/content/101/48/16789 fig 3 for XBOND_ACC_ANGLE_MIN
+    https://www.pnas.org/content/101/48/16789 fig 3 for acceptor_angle_min
 
     Note: a.atom_list = [A], d.atom_list = [D, X]
     """
@@ -359,12 +396,12 @@ def find_x_bonds(acceptors: List, donor_pairs: List[NamedTuple]) -> List[Halogen
         if d.atom_list[1].atomic_num == 9:
             continue
         dist = get_euclidean_distance_3d(a.atom_list[0].coords, d.atom_list[1].coords)
-        if not constants.MIN_DIST <= dist <= constants.XBOND_DIST_MAX:
+        if not distance_min <= dist <= distance_max:
             continue
         vec_xa = get_vector(d.atom_list[1].coords, a.atom_list[0].coords)
         vec_xd = get_vector(d.atom_list[1].coords, d.atom_list[0].coords)
         angle_axd = get_vector_angle(vec_xa, vec_xd)
-        if not angle_axd >= constants.XBOND_DON_ANGLE_MIN:
+        if not angle_axd >= donor_angle_min:
             logger.debug(
                 f'X-bond ignored due to small A--X-D angle {angle_axd}, '
                 f'distance {dist}'
@@ -375,7 +412,7 @@ def find_x_bonds(acceptors: List, donor_pairs: List[NamedTuple]) -> List[Halogen
             vec_ay = get_vector(a.atom_list[0].coords, y.coords)
             vec_ax = get_vector(a.atom_list[0].coords, d.atom_list[1].coords)
             angle_yax = get_vector_angle(vec_ay, vec_ax)
-            if not angle_yax >= constants.XBOND_ACC_ANGLE_MIN:
+            if not angle_yax >= acceptor_angle_min:
                 angle_ok = False
                 logger.debug(
                     f'X-bond ignored due to small Y-A--X angle {angle_yax}, '
@@ -403,14 +440,19 @@ class Multipolar(NamedTuple):
 
 
 def find_multpipolar_interactions(
-    acceptors: List[NamedTuple], donor_pairs: List
+    acceptors: List,
+    donor_pairs: List,
+    distance_min: float,
+    distance_max: float,
+    donor_angle_min: float,
+    norm_angle_max: float,
 ) -> List[Multipolar]:
     """Detects orthogonal multipolar interactions between F/Cl
     and polarised Csp2 (e.g. amide).
 
     Definition: pairs of (acceptor and C-X pair) within
-        MULTIPOLAR_DIST_MAX, DXA angle >= MULTIPOLAR_DON_ANGLE_MIN
-        and angle between normal to amide plan and AX = 0 +/- MULTIPOLAR_NORM_ANGLE_MAX
+        multipolar_dist_max, DXA angle >= multipolar_don_angle_min
+        and angle between normal to amide plan and AX = 0 +/- norm_angle_max
 
     Note: a.atom_list = [C], d.atom_list = [D, X]
     """
@@ -421,12 +463,12 @@ def find_multpipolar_interactions(
         if d.atom_list[1].atomic_num not in [9, 17]:
             continue
         dist = get_euclidean_distance_3d(a.atom_list[0].coords, d.atom_list[1].coords)
-        if not constants.MIN_DIST <= dist <= constants.MULTIPOLAR_DIST_MAX:
+        if not distance_min <= dist <= distance_max:
             continue
         vec_xa = get_vector(d.atom_list[1].coords, a.atom_list[0].coords)
         vec_xd = get_vector(d.atom_list[1].coords, d.atom_list[0].coords)
         angle_axd = get_vector_angle(vec_xa, vec_xd)
-        if not angle_axd >= constants.MULTIPOLAR_DON_ANGLE_MIN:
+        if not angle_axd >= donor_angle_min:
             logger.debug(
                 f'Multipolar ignored due to small A--X-D angle {angle_axd}, '
                 f'distance {dist}'
@@ -436,7 +478,7 @@ def find_multpipolar_interactions(
         # Take the smallest of two angles, depending on direction of normal
         angle_tmp = get_vector_angle(a.normal, vec_xa)
         angle_xay = min(angle_tmp, 180 - angle_tmp)
-        if not 0 <= angle_xay <= constants.MULTIPOLAR_NORM_ANGLE_MAX:
+        if not 0 <= angle_xay <= norm_angle_max:
             logger.debug(
                 f'Multipolar ignored due to large X--A-Y angle {angle_xay}, '
                 f'distance {dist}'
@@ -461,12 +503,15 @@ class Salt_Bridge(NamedTuple):
 
 
 def find_salt_bridges(
-    charged_atoms_rec: List, charged_atoms_lig: List[NamedTuple]
+    charged_atoms_rec: List,
+    charged_atoms_lig: List,
+    distance_min: float,
+    distance_max: float,
 ) -> List[Salt_Bridge]:
     """Detects salt bridges, i.e. interaction between positively charged
     and negatively charged groups.
 
-    Definition: pairs of charged groups/atoms within SALTBRIDGE_DIST_MAX
+    Definition: pairs of charged groups/atoms within saltbridge_dist_max
     """
 
     pairings = []
@@ -474,7 +519,7 @@ def find_salt_bridges(
         if group_rec.charge == group_lig.charge:
             continue
         dist = get_euclidean_distance_3d(group_rec.center, group_lig.center)
-        if not constants.MIN_DIST <= dist <= constants.SALTBRIDGE_DIST_MAX:
+        if not distance_min <= dist <= distance_max:
             continue
         contact = Salt_Bridge(
             ligand=group_lig.atom_list, receptor=group_rec.atom_list, distance=dist
@@ -494,22 +539,27 @@ class Water_Bridge(NamedTuple):
 
 
 def find_water_bridges(
-    acceptors: List[NamedTuple],
+    acceptors: List,
     donor_pairs: List,
     waters: List,
+    distance_min: float,
+    distance_max: float,
+    omega_min: float,
+    omega_max: float,
+    hbond_acceptor_angle_min: float,
+    hbond_donor_angle_min: float,
     don_on_prot: bool = True,
 ) -> List[Water_Bridge]:
     """Detects water-bridged hydrogen bonds between ligand and protein
 
     Definition: pairs of (H-bond acceptor and H-bond donor pair)
-        within WATER_BRIDGE_MAXDIST of a water molecule,
+        within distance_max of a water molecule,
         with appropriate AOH and OHD angles,
-        and each YAH angle >= HBOND_ACC_ANGLE_MIN (Y are A's neighbours,
+        and each YAH angle >= hbond_acceptor_angle_min (Y are A's neighbours,
         this check is to ensure the H-bond is on the lone pair side of A)
 
     Note: a.atom_list = [A], d.atom_list = [D, H]
     """
-
     pairings = []
     for a, d in product(acceptors, donor_pairs):
         if not d.type == 'strong':
@@ -518,20 +568,12 @@ def find_water_bridges(
             dist_aw = get_euclidean_distance_3d(
                 a.atom_list[0].coords, w.atom_list[0].coords
             )
-            if (
-                not constants.WATER_BRIDGE_MINDIST
-                <= dist_aw
-                <= constants.WATER_BRIDGE_MAXDIST
-            ):
+            if not distance_min <= dist_aw <= distance_max:
                 continue
             dist_dw = get_euclidean_distance_3d(
                 d.atom_list[0].coords, w.atom_list[0].coords
             )
-            if (
-                not constants.WATER_BRIDGE_MINDIST
-                <= dist_dw
-                <= constants.WATER_BRIDGE_MAXDIST
-            ):
+            if not distance_min <= dist_dw <= distance_max:
                 continue
             angle_ok = True
             for y in a.neighbours:
@@ -540,7 +582,7 @@ def find_water_bridges(
                 angle_yao = get_vector_angle(
                     vec_ay, vec_ao
                 )  # angle with O_wat instead of H_wat
-                if not angle_yao >= constants.HBOND_ACC_ANGLE_MIN:
+                if not angle_yao >= hbond_acceptor_angle_min:
                     angle_ok = False
                     logger.debug(
                         f'Water bridge ignored due to small Y-A--OW angle {angle_yao}, '
@@ -552,7 +594,7 @@ def find_water_bridges(
             vec_hd = get_vector(d.atom_list[1].coords, d.atom_list[0].coords)
             vec_hw = get_vector(d.atom_list[1].coords, w.atom_list[0].coords)
             angle_dhw = get_vector_angle(vec_hd, vec_hw)
-            if not angle_dhw >= constants.HBOND_DON_ANGLE_MIN:
+            if not angle_dhw >= hbond_donor_angle_min:
                 logger.debug(
                     f'Water bridge ignored due to small D-H--OW angle {angle_dhw}, '
                     f'distance {dist_aw} and {dist_dw}'
@@ -561,11 +603,7 @@ def find_water_bridges(
             vec_wa = get_vector(w.atom_list[0].coords, a.atom_list[0].coords)
             vec_wh = get_vector(w.atom_list[0].coords, d.atom_list[1].coords)
             angle_awh = get_vector_angle(vec_wa, vec_wh)
-            if not (
-                constants.WATER_BRIDGE_OMEGA_MIN
-                <= angle_awh
-                <= constants.WATER_BRIDGE_OMEGA_MAX
-            ):
+            if not (omega_min <= angle_awh <= omega_max):
                 logger.debug(
                     f'Water bridge ignored due to invalid A--OW--H angle {angle_awh}, '
                     f'distance {dist_aw} and {dist_dw}'
@@ -592,24 +630,25 @@ class Metal_Complex(NamedTuple):
     metal: List[Atom]
     ligand: List[Atom]
     receptor: List[Atom]
-    coordination_num: Any
-    rms: Any
-    geometry: Any
-    num_partners: Any
-    complex_num: Any
+    coordination_num: int
+    rms: float
+    geometry: str
+    num_partners: int
+    complex_num: int
 
 
 def find_metal_complexes(  # noqa: C901
     metals_rec: List,
-    metal_binders_rec: List[NamedTuple],
+    metal_binders_rec: List,
     metals_lig: List,
-    metal_binders_lig: List[NamedTuple],
-    metal_binders_wat: List[NamedTuple],
+    metal_binders_lig: List,
+    metal_binders_wat: List,
+    distance_max: float,
 ) -> List[Metal_Complex]:
     """Detects metal-atom interactions between any metal (ligand or receptor side)
     and any appropriate group (ligand or receptor side), as well as water.
 
-    Definition: set of L/R--M pairs within METAL_DIST_MAX and with a predefined geometry
+    Definition: set of L/R--M pairs within distance_max and with a predefined geometry
 
     Returns:
         1 set per detected complex, with M / L / R atoms in separate lists
@@ -624,7 +663,7 @@ def find_metal_complexes(  # noqa: C901
     pairings_dict = {}  # type: dict
     for m, b in product(metals, metal_binders):
         dist = get_euclidean_distance_3d(m.atom_list[0].coords, b.atom_list[0].coords)
-        if not dist <= constants.METAL_DIST_MAX:
+        if not dist <= distance_max:
             continue
         m_id = m.atom_list[0].unique_id
         if m_id not in pairings_dict:
@@ -668,7 +707,13 @@ def find_metal_complexes(  # noqa: C901
 
         # Record fit information for each geometry tested
         all_total = []
-        gdata = namedtuple('gdata', 'geometry rms coordination excluded diff_binders')
+
+        class gdata(NamedTuple):
+            geometry: str
+            rms: float
+            coordination: int
+            excluded: List
+            diff_binders: int
 
         if num_binders > 1:
             # Start with highest coordination number and loop over

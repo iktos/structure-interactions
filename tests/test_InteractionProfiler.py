@@ -5,7 +5,7 @@ def test_analyse_complex_3S3M():
     protein_path = 'tests/data/prot_3S3M.pdb'
     ligand_path = 'tests/data/lig_3S3M.sdf'
 
-    plip = InteractionProfiler(plip_config_version='default')  # set plip_config here
+    plip = InteractionProfiler()
     contacts_ref = plip.analyse_complex(
         rec_coords=protein_path,
         lig_coords=ligand_path,
@@ -26,7 +26,7 @@ def test_analyse_complex_5N9T():
     protein_path = 'tests/data/prot_5N9T.pdb'
     ligand_path = 'tests/data/lig_5N9T.sdf'
 
-    plip = InteractionProfiler(plip_config_version='default')  # set plip_config here
+    plip = InteractionProfiler()
     contacts_ref = plip.analyse_complex(
         rec_coords=protein_path,
         lig_coords=ligand_path,

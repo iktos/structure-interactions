@@ -33,7 +33,7 @@ ligand_sdf_list = [
 ]
 
 # Analyse contacts in multiple complexes
-plip = InteractionProfiler(plip_config_version='default')  # set plip_config here
+plip = InteractionProfiler()
 contacts_ref = [
     plip.analyse_complex(
         str(protein_pdb_list[i]),

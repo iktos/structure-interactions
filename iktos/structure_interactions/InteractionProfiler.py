@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 
-import importlib
 from itertools import product
-from typing import Dict, List, Union
+from typing import Dict, List, Sequence, Union
 
 from iktos.logger import getLogger
+from iktos.structure_utils.file_manager.utils import file_to_blocks
 
 try:
     from openbabel.openbabel import OBResidueAtomIter, OBResidueIter  # openbabel 3
@@ -15,10 +15,19 @@ except ModuleNotFoundError:
     )  # openbabel 2 (warning in structure-utils)
 
 import numpy as np
-from iktos.structure_utils.file_manager.utils import file_to_blocks
 
-from . import constants
 from .detection import (
+    H_Bond,
+    Halogen_Bond,
+    Hydrophobic,
+    Metal_Complex,
+    Multipolar,
+    Pi_Amide,
+    Pi_Cation,
+    Pi_Hydrophobic,
+    Pi_Stacking,
+    Salt_Bridge,
+    Water_Bridge,
     find_h_bonds,
     find_hydrophobics,
     find_metal_complexes,
@@ -31,6 +40,7 @@ from .detection import (
     find_water_bridges,
     find_x_bonds,
 )
+from .InteractionParameters import InteractionParameters
 from .Ligand import Ligand
 from .math_utils import get_centroid, get_euclidean_distance_3d
 from .Receptor import Receptor
@@ -53,9 +63,6 @@ class InteractionProfiler:
     version of PLIP (Protein-Ligand Interaction Profiler)
     """
 
-    def __init__(self, plip_config_version='default'):
-        self.plip_config_version = plip_config_version
-
     def analyse_complex(
         self,
         rec_coords: str,
@@ -63,6 +70,7 @@ class InteractionProfiler:
         lig_format: str = 'sdf',
         as_string: bool = True,
         refine: bool = True,
+        parameters: InteractionParameters = InteractionParameters(),
     ):
         """Performs protein-ligand interaction analysis for 1 complex.
 
@@ -75,6 +83,7 @@ class InteractionProfiler:
             lig_format: format of lig_coords (recommended format is 'sdf')
             as_string: whether to read coords in files or from blocks
             refine: if True, cleanup double-counted contacts (e.g. hydrophobics + pi-stacking)
+            parameters: parameters of class InteractionParameters
 
         Returns:
             contacts in a formatted dict
@@ -83,11 +92,14 @@ class InteractionProfiler:
         if not status:
             return False
         status = self._load_ligand(
-            lig_coords, lig_format=lig_format, as_string=as_string
+            lig_coords,
+            lig_format=lig_format,
+            as_string=as_string,
+            bs_dist=parameters.bs_dist,
         )
         if not status:
             return False
-        return self._analyse_interactions(refine=refine)
+        return self._analyse_interactions(refine=refine, parameters=parameters)
 
     def analyse_complexes(
         self,
@@ -96,6 +108,7 @@ class InteractionProfiler:
         lig_format: str = 'sdf',
         as_string: bool = True,
         refine: bool = True,
+        parameters: InteractionParameters = InteractionParameters(),
     ):
         """Performs protein-ligand interaction analysis
         for multiple complexes that share the same recpetor.
@@ -109,6 +122,7 @@ class InteractionProfiler:
             lig_format: format of lig_coords (recommended format is 'sdf')
             as_string: whether to read coords in files or from blocks
             refine: if True, cleanup double-counted contacts (e.g. hydrophobics + pi-stacking)
+            parameters: parameters of class InteractionParameters
 
         Returns:
             list of contacts in a formatted dict
@@ -122,17 +136,16 @@ class InteractionProfiler:
         else:
             lig_blocks = file_to_blocks(lig_coords, fmt=lig_format)
         for lig in lig_blocks:
-            status = self._load_ligand(lig, lig_format=lig_format, as_string=True)
+            status = self._load_ligand(
+                lig, lig_format=lig_format, as_string=True, bs_dist=parameters.bs_dist
+            )
             if not status:
                 contacts.append({})
             else:
-                contacts.append(self._analyse_interactions(refine=refine))
+                contacts.append(
+                    self._analyse_interactions(refine=refine, parameters=parameters)
+                )
         return contacts
-
-    def _plip_alternate_config(self):
-        constants.HBOND_DIST_MAX = 3.5
-        constants.HBOND_DON_ANGLE_MIN = 150
-        constants.XBOND_DIST_MAX = 3.5
 
     def _load_receptor(self, rec_coords: str, as_string: bool) -> bool:
         """Loads the receptor and initialises water object."""
@@ -154,7 +167,9 @@ class InteractionProfiler:
         self.rec = Receptor(self.obmol_rec)
         return True
 
-    def _load_ligand(self, lig_coords: str, lig_format: str, as_string: bool) -> bool:
+    def _load_ligand(
+        self, lig_coords: str, lig_format: str, as_string: bool, bs_dist: float
+    ) -> bool:
         """Loads the ligand and initialises ligand and binding site objects."""
         if lig_format != 'sdf':
             logger.warning(
@@ -179,21 +194,18 @@ class InteractionProfiler:
 
         # Finalise initialisation of receptor and water objects
         logger.info('Selecting binding site residues and atoms')
-        bs_atoms_refined, water_atoms = self._extract_binding_site()
+        bs_atoms_refined, water_atoms = self._extract_binding_site(bs_dist=bs_dist)
         self.rec.identify_functional_groups(bs_atoms_refined)
         self.wat.identify_functional_groups(water_atoms)
         return True
 
-    def _analyse_interactions(self, refine: bool):
+    def _analyse_interactions(self, refine: bool, parameters: InteractionParameters):
         """Performs protein-ligand interaction analysis
         for 1 complex (after initialisation of the objects)."""
         # Setup PLIP config
-        importlib.reload(constants)
-        if self.plip_config_version == 'custom':
-            self._plip_alternate_config()
 
         # Analyse contacts
-        self._detect_interactions()
+        self._detect_interactions(parameters=parameters)
 
         # Refine contacts
         if refine:
@@ -206,12 +218,12 @@ class InteractionProfiler:
         contacts = self._parse_interactions(self.interactions_all)
         return contacts
 
-    def _extract_binding_site(self):
+    def _extract_binding_site(self, bs_dist: float):
         """
         Select atoms that belong to the binding site
         """
         # Select binding site residues
-        cutoff = self.lig.max_dist_to_center + constants.BS_DIST
+        cutoff = self.lig.max_dist_to_center + bs_dist
         obres_rec = [
             obres
             for obres in OBResidueIter(self.obmol_rec)
@@ -250,7 +262,7 @@ class InteractionProfiler:
             get_euclidean_distance_3d(product_rl[:, 0], product_rl[:, 1]).reshape(
                 coords_r.shape[0], coords_l.shape[0]
             )
-            < constants.BS_DIST
+            < bs_dist
         )
 
         # Selecting the first atoms for each coords_r which respect the distance criterion:
@@ -262,57 +274,157 @@ class InteractionProfiler:
         logger.debug(f'Selected {len(bs_atoms_refined)} atoms as binding site')
         return bs_atoms_refined, water_atoms
 
-    def _detect_interactions(self):
+    def _detect_interactions(self, parameters: InteractionParameters):
         """
         Find all receptor-ligand interactions
         Call functions stroed in detection.py
         """
         logger.info('Analysing interactions')
         self.hydrophobics_all = find_hydrophobics(
-            self.rec.hydrophobics, self.lig.hydrophobics
+            self.rec.hydrophobics,
+            self.lig.hydrophobics,
+            parameters.min_dist,
+            parameters.hydrophobic_dist_max,
         )
         logger.debug(f'Found {len(self.hydrophobics_all)} hydrophobic interaction(s)')
 
-        self.pi_stackings_all = find_pi_stackings(self.rec.rings, self.lig.rings)
+        self.pi_stackings_all = find_pi_stackings(
+            self.rec.rings,
+            self.lig.rings,
+            parameters.min_dist,
+            parameters.pistacking_dist_max_t,
+            parameters.pistacking_dist_max_f,
+            parameters.pistacking_dist_max_p,
+            parameters.pistacking_ang_dev,
+            parameters.pistacking_offset_max,
+        )
         logger.debug(f'Found {len(self.pi_stackings_all)} pi-stacking interaction(s)')
 
         self.pi_amides_all = find_pi_amides(
-            self.rec.pi_carbons, self.lig.rings
-        ) + find_pi_amides(self.rec.rings, self.lig.pi_carbons)
+            self.rec.pi_carbons,
+            self.lig.rings,
+            parameters.min_dist,
+            parameters.piother_dist_max,
+            parameters.piother_offset_max,
+            parameters.pistacking_ang_dev,
+        ) + find_pi_amides(
+            self.rec.rings,
+            self.lig.pi_carbons,
+            parameters.min_dist,
+            parameters.piother_dist_max,
+            parameters.piother_offset_max,
+            parameters.pistacking_ang_dev,
+        )
         logger.debug(f'Found {len(self.pi_amides_all)} pi-amide like interaction(s)')
 
         self.pi_cations_all = find_pi_cations(
-            self.rec.rings, self.lig.charged_atoms, True
-        ) + find_pi_cations(self.lig.rings, self.rec.charged_atoms, False)
+            self.rec.rings,
+            self.lig.charged_atoms,
+            parameters.min_dist,
+            parameters.piother_dist_max,
+            parameters.piother_offset_max,
+            True,
+        ) + find_pi_cations(
+            self.lig.rings,
+            self.rec.charged_atoms,
+            parameters.min_dist,
+            parameters.piother_dist_max,
+            parameters.piother_offset_max,
+            False,
+        )
         logger.debug(f'Found {len(self.pi_cations_all)} pi-cation interaction(s)')
 
         self.pi_hydrophobics_all = find_pi_hydrophobics(
-            self.rec.rings, self.lig.hydrophobics, True
-        ) + find_pi_hydrophobics(self.lig.rings, self.rec.hydrophobics, False)
+            self.rec.rings,
+            self.lig.hydrophobics,
+            parameters.min_dist,
+            parameters.piother_dist_max,
+            parameters.piother_offset_max,
+            True,
+        ) + find_pi_hydrophobics(
+            self.lig.rings,
+            self.rec.hydrophobics,
+            parameters.min_dist,
+            parameters.piother_dist_max,
+            parameters.piother_offset_max,
+            False,
+        )
         logger.debug(
             f'Found {len(self.pi_hydrophobics_all)} pi-hydrophobic interaction(s)'
         )
 
         self.h_bonds_all = (
-            find_h_bonds(self.rec.h_bond_acceptors, self.lig.h_bond_donors, False)
-            + find_h_bonds(self.wat.h_bond_acceptors, self.lig.h_bond_donors, False)
-            + find_h_bonds(self.lig.h_bond_acceptors, self.rec.h_bond_donors, True)
-            + find_h_bonds(self.lig.h_bond_acceptors, self.wat.h_bond_donors, True)
+            find_h_bonds(
+                self.rec.h_bond_acceptors,
+                self.lig.h_bond_donors,
+                parameters.min_dist,
+                parameters.hbond_dist_max,
+                parameters.hbond_don_angle_min,
+                parameters.hbond_acc_angle_min,
+                False,
+            )
+            + find_h_bonds(
+                self.wat.h_bond_acceptors,
+                self.lig.h_bond_donors,
+                parameters.min_dist,
+                parameters.hbond_dist_max,
+                parameters.hbond_don_angle_min,
+                parameters.hbond_acc_angle_min,
+                False,
+            )
+            + find_h_bonds(
+                self.lig.h_bond_acceptors,
+                self.rec.h_bond_donors,
+                parameters.min_dist,
+                parameters.hbond_dist_max,
+                parameters.hbond_don_angle_min,
+                parameters.hbond_acc_angle_min,
+                True,
+            )
+            + find_h_bonds(
+                self.lig.h_bond_acceptors,
+                self.wat.h_bond_donors,
+                parameters.min_dist,
+                parameters.hbond_dist_max,
+                parameters.hbond_don_angle_min,
+                parameters.hbond_acc_angle_min,
+                True,
+            )
         )
         logger.debug(f'Found {len(self.h_bonds_all)} H-bond(s)')
 
         self.x_bonds_all = find_x_bonds(
-            self.rec.x_bond_acceptors, self.lig.halogens
-        ) + find_x_bonds(self.lig.x_bond_acceptors, self.rec.halogens)
+            self.rec.x_bond_acceptors,
+            self.lig.halogens,
+            parameters.min_dist,
+            parameters.xbond_dist_max,
+            parameters.xbond_don_angle_min,
+            parameters.xbond_acc_angle_min,
+        ) + find_x_bonds(
+            self.lig.x_bond_acceptors,
+            self.rec.halogens,
+            parameters.min_dist,
+            parameters.xbond_dist_max,
+            parameters.xbond_don_angle_min,
+            parameters.xbond_acc_angle_min,
+        )
         logger.debug(f'Found {len(self.x_bonds_all)} halogen bond(s)')
 
         self.mulipolar_all = find_multpipolar_interactions(
-            self.rec.pi_carbons, self.lig.halogens
+            self.rec.pi_carbons,
+            self.lig.halogens,
+            parameters.min_dist,
+            parameters.multipolar_dist_max,
+            parameters.multipolar_don_angle_min,
+            parameters.multipolar_norm_angle_max,
         )
         logger.debug(f'Found {len(self.mulipolar_all)} multipolar interaction(s)')
 
         self.salt_bridges_all = find_salt_bridges(
-            self.rec.charged_atoms, self.lig.charged_atoms
+            self.rec.charged_atoms,
+            self.lig.charged_atoms,
+            parameters.min_dist,
+            parameters.saltbridge_dist_max,
         )
         logger.debug(f'Found {len(self.salt_bridges_all)} salt bridge(s)')
 
@@ -320,11 +432,23 @@ class InteractionProfiler:
             self.rec.h_bond_acceptors,
             self.lig.h_bond_donors,
             self.wat.metal_binders,
+            parameters.water_bridge_mindist,
+            parameters.water_bridge_maxdist,
+            parameters.water_bridge_omega_min,
+            parameters.water_bridge_omega_max,
+            parameters.hbond_acc_angle_min,
+            parameters.hbond_don_angle_min,
             False,
         ) + find_water_bridges(
             self.lig.h_bond_acceptors,
             self.rec.h_bond_donors,
             self.wat.metal_binders,
+            parameters.water_bridge_mindist,
+            parameters.water_bridge_maxdist,
+            parameters.water_bridge_omega_min,
+            parameters.water_bridge_omega_max,
+            parameters.hbond_acc_angle_min,
+            parameters.hbond_don_angle_min,
             True,
         )
         logger.debug(f'Found {len(self.water_bridges_all)} water bridge(s)')
@@ -335,21 +459,35 @@ class InteractionProfiler:
             self.lig.metals,
             self.lig.metal_binders,
             self.wat.metal_binders,
+            parameters.metal_dist_max,
         )
         logger.debug(f'Found {len(self.metal_complexes)} metal complex(es)')
 
-        self.interactions_all = (
-            self.hydrophobics_all
-            + self.pi_stackings_all
-            + self.pi_amides_all
-            + self.pi_cations_all
-            + self.pi_hydrophobics_all
-            + self.h_bonds_all
-            + self.x_bonds_all
-            + self.mulipolar_all
-            + self.salt_bridges_all
-            + self.metal_complexes
-            + self.water_bridges_all
+        self.interactions_all: Sequence[
+            Union[
+                H_Bond,
+                Hydrophobic,
+                Metal_Complex,
+                Multipolar,
+                Pi_Amide,
+                Pi_Cation,
+                Pi_Hydrophobic,
+                Pi_Stacking,
+                Salt_Bridge,
+                Water_Bridge,
+                Halogen_Bond,
+            ]
+        ] = (
+            self.hydrophobics_all  # type: ignore [operator]
+            + self.pi_stackings_all  # type: ignore [operator]
+            + self.pi_amides_all  # type: ignore [operator]
+            + self.pi_cations_all  # type: ignore [operator]
+            + self.pi_hydrophobics_all  # type: ignore [operator]
+            + self.h_bonds_all  # type: ignore [operator]
+            + self.x_bonds_all  # type: ignore [operator]
+            + self.mulipolar_all  # type: ignore [operator]
+            + self.salt_bridges_all  # type: ignore [operator]
+            + self.metal_complexes  # type: ignore [operator]
         )
 
     def _refine_interactions(self):
@@ -395,7 +533,7 @@ class InteractionProfiler:
             + self.water_bridges
         )
 
-    def _parse_interactions(self, plip_list: List) -> Dict:
+    def _parse_interactions(self, plip_list: Sequence) -> Dict:
         """
         Parse contacts and return them as a list of dicts
         formatted for further analysis/drawing

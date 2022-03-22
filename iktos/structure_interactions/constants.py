@@ -11,49 +11,7 @@
 # 4/ N. K. Shinada, A. G. de Brevern, P. Schmidtke Halogens in Protein–Ligand Binding Mechanism: A Structural Perspective, 2019, J. Med. Chem., 62, 21, 9341–9356
 # 5/ B. Kuhn, E. Gilberg, R. Taylorn J. Cole, O. Korb How Significant Are Unusual Protein−Ligand Interactions? Insights from Database Mining, 2019, J. Med. Chem, 62, 22, 10441–10455
 
-BS_DIST = 7.5  # max dist to include binding site residues
 AROMATIC_PLANARITY = 5.0  # max allowed deviation from planarity in aromatic rings
-MIN_DIST = 0.5  # min dist for all distance thresholds
-
-# Hydrophobic interactions
-HYDROPHOBIC_DIST_MAX = 4.0  # max dist for detection of hydrophobic contacts
-
-# H-bonds
-HBOND_DIST_MAX = 4.0  # max dist between D and A (Hubbard & Haider, 2001) + 0.5 A
-HBOND_DON_ANGLE_MIN = 140  # minimal angle for D-H-A
-HBOND_ACC_ANGLE_MIN = 100  # minimal angle for each H-A-Y, where Y are A's neighbours (custom)
-
-# Halogen bonds (Cl/Br/I with e.g. [O]=C)
-XBOND_DIST_MAX = 4.0  # max dist between A and X (ref + 0.5)
-XBOND_DON_ANGLE_MIN = 140  # minimal angle for C-X-A
-XBOND_ACC_ANGLE_MIN = 90  # minimal angle for each X-A-Y, where Y are A's neighbours (custom)
-
-# Orthogonal multipolar interactions (F/Cl with e.g. [C]=O)
-# See ppt Anna Vulpetti, Cambridge, 2013, slide 11
-MULTIPOLAR_DIST_MAX = 4.0  # max dist between A and X
-MULTIPOLAR_DON_ANGLE_MIN = 90  # minimal angle for C-X-A
-MULTIPOLAR_NORM_ANGLE_MAX = 40  # max angle for C-X--Camide
-
-# Pi interactions (aromatic with aromatic/cation/hydrophobic/amide)
-PISTACKING_DIST_MAX_T = 5.5  # max dist for T-shaped pi-stacking (McGaughey, 1998)
-PISTACKING_DIST_MAX_F = 4.75  # between PISTACKING_DIST_MAX_T and PISTACKING_DIST_MAX_P
-PISTACKING_DIST_MAX_P = 4.0  # max dist for parallel pi-stacking
-PISTACKING_ANG_DEV = 30  # max deviation to optimal angle (0 for //, 90 for |--, between -> face/edge-to-face)
-PISTACKING_OFFSET_MAX = 2.5  # max offset of the two R (corresponds to the radius of benzene + 1 A)
-PIOTHER_DIST_MAX = 4.0  # ref 1, table S2
-PIOTHER_OFFSET_MAX = 2.0  # max offset for pi-hydrophobic, pi-cation and pi-amide interactions (custom)
-
-# Other interactions
-SALTBRIDGE_DIST_MAX = 5.5  # max dist between centers of charge for salt bridges (Barlow and Thornton, 1983) + 1.5
-WATER_BRIDGE_MINDIST = 2.5  # min dist between O_wat and polar atom (Jiang et al., 2005) - 0.1
-WATER_BRIDGE_MAXDIST = 4.1  # max dist between O_wat and polar atom (Jiang et al., 2005) + 0.5
-WATER_BRIDGE_OMEGA_MIN = 71  # min angle between A, O_wat and D hydrogen (Jiang et al., 2005) - 9
-WATER_BRIDGE_OMEGA_MAX = 140  # max angle between A, O_wat and D hydrogen (Jiang et al., 2005)
-METAL_DIST_MAX = 3.0  # max dist between M and interacting atom (Harding, 2001)
-
-# Useful references
-# X-bonds: Halogen bonds in biological molecules, Auffinger
-
 # Coordination numbers and geometries for metal complexes detection
 METAL_COMPLEX_COO = {
     2: ['linear'],
