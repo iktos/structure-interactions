@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from iktos.logger import getLogger
+from logging import getLogger
 
 try:
     from openbabel.openbabel import OBMolAtomIter  # openbabel 3

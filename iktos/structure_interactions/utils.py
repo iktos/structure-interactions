@@ -2,10 +2,10 @@ from __future__ import absolute_import
 
 from copy import deepcopy
 from itertools import product
+from logging import getLogger
 from typing import List, Optional, Tuple
 
 import numpy as np
-from iktos.logger import getLogger
 from iktos.structure_utils.toolkits.obabel import read_mol as read_obmol
 from iktos.structure_utils.toolkits.obabel import rename_residue
 

@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 
 from itertools import product
+from logging import getLogger
 from typing import Dict, List, Sequence, Union
 
-from iktos.logger import getLogger
 from iktos.structure_utils.file_manager.utils import file_to_blocks
 
 try:

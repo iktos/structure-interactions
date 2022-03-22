@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 
 from builtins import filter
+from logging import getLogger
 from typing import Any, List, NamedTuple
 
 import numpy as np
-from iktos.logger import getLogger
 from iktos.structure_utils.pdb.constants import CHARGED_RESIDUES
 
 try:

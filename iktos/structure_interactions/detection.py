@@ -2,10 +2,10 @@ from __future__ import absolute_import
 
 from collections import defaultdict
 from itertools import product
+from logging import getLogger
 from typing import List, NamedTuple
 
 import numpy as np
-from iktos.logger import getLogger
 
 from . import constants
 from .Atom import Atom

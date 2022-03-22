@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 
 from itertools import combinations, product
-
-from iktos.logger import getLogger
+from logging import getLogger
 
 logger = getLogger(__name__)
 
