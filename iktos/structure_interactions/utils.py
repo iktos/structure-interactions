@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from copy import deepcopy
 from itertools import product
 from logging import getLogger
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from iktos.structure_utils.toolkits.obabel import read_mol as read_obmol
@@ -348,3 +348,45 @@ def parse_pdb(pdb, as_string=True):
             pdb_block += line
             i += 1
     return pdb_block, mapping
+
+
+def contacts_to_dict(plip_list: Sequence) -> Dict:
+    """
+    Parse contacts and return them as a list of dicts
+    formatted for further analysis/drawing
+    """
+    plip_dict: Dict[str, Any] = {}
+    for contact in plip_list:
+        contact_name = type(contact).__name__
+        if contact_name == 'H_Bond':
+            if contact.type == 'weak':
+                contact_name += '_Weak'
+        if contact_name not in plip_dict:
+            plip_dict[contact_name] = []
+        parsed_contact = {}
+        for field in contact._fields:
+            if field == 'receptor':
+                atom_list = getattr(contact, field)
+                # Drop Hs
+                # atom_list = [a for a in atom_list if a.atomic_num != 1]
+                parsed_contact['at_p'] = [a.atom_id for a in atom_list]
+                parsed_contact['at_name_p'] = [a.atom_name for a in atom_list]
+                if contact_name != 'Metal_Complex':
+                    parsed_contact['res_p'] = atom_list[0].residue_id
+            elif field == 'ligand':
+                atom_list = getattr(contact, field)
+                parsed_contact['at_l'] = [a.atom_id for a in atom_list]
+                parsed_contact['at_name_l'] = [a.atom_name for a in atom_list]
+            elif field == 'water':
+                atom_list = getattr(contact, field)
+                parsed_contact['at_owat'] = [a.atom_id for a in atom_list]
+                parsed_contact['res_w'] = atom_list[0].residue_id
+            elif field == 'metal':
+                atom_list = getattr(contact, field)
+                parsed_contact['at_m'] = [a.atom_id for a in atom_list]
+                parsed_contact['at_name_m'] = [a.atom_name for a in atom_list]
+                parsed_contact['res_p'] = atom_list[0].residue_id
+            else:
+                parsed_contact[field] = getattr(contact, field)
+        plip_dict[contact_name].append(parsed_contact)
+    return plip_dict

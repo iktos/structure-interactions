@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from itertools import product
 from logging import getLogger
-from typing import Dict, List, Sequence, Union
+from typing import List, Sequence, Union
 
 from iktos.structure_utils.file_manager.utils import file_to_blocks
 
@@ -213,10 +213,8 @@ class InteractionProfiler:
 
         # Parse results
         if refine:
-            contacts = self._parse_interactions(self.interactions)
-            return contacts
-        contacts = self._parse_interactions(self.interactions_all)
-        return contacts
+            return self.interactions
+        return self.interactions_all
 
     def _extract_binding_site(self, bs_dist: float):
         """
@@ -532,44 +530,3 @@ class InteractionProfiler:
             + self.metal_complexes
             + self.water_bridges
         )
-
-    def _parse_interactions(self, plip_list: Sequence) -> Dict:
-        """
-        Parse contacts and return them as a list of dicts
-        formatted for further analysis/drawing
-        """
-        plip_dict = {}  # type: Dict
-        for contact in plip_list:
-            contact_name = type(contact).__name__
-            if contact_name == 'H_Bond':
-                if contact.type == 'weak':
-                    contact_name += '_Weak'
-            if contact_name not in plip_dict:
-                plip_dict[contact_name] = []
-            parsed_contact = {}
-            for field in contact._fields:
-                if field == 'receptor':
-                    atom_list = getattr(contact, field)
-                    # Drop Hs
-                    # atom_list = [a for a in atom_list if a.atomic_num != 1]
-                    parsed_contact['at_p'] = [a.atom_id for a in atom_list]
-                    parsed_contact['at_name_p'] = [a.atom_name for a in atom_list]
-                    if contact_name != 'Metal_Complex':
-                        parsed_contact['res_p'] = atom_list[0].residue_id
-                elif field == 'ligand':
-                    atom_list = getattr(contact, field)
-                    parsed_contact['at_l'] = [a.atom_id for a in atom_list]
-                    parsed_contact['at_name_l'] = [a.atom_name for a in atom_list]
-                elif field == 'water':
-                    atom_list = getattr(contact, field)
-                    parsed_contact['at_owat'] = [a.atom_id for a in atom_list]
-                    parsed_contact['res_w'] = atom_list[0].residue_id
-                elif field == 'metal':
-                    atom_list = getattr(contact, field)
-                    parsed_contact['at_m'] = [a.atom_id for a in atom_list]
-                    parsed_contact['at_name_m'] = [a.atom_name for a in atom_list]
-                    parsed_contact['res_p'] = atom_list[0].residue_id
-                else:
-                    parsed_contact[field] = getattr(contact, field)
-            plip_dict[contact_name].append(parsed_contact)
-        return plip_dict

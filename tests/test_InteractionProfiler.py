@@ -1,4 +1,5 @@
 from iktos.structure_interactions.InteractionProfiler import InteractionProfiler
+from iktos.structure_interactions.utils import contacts_to_dict
 
 
 def test_analyse_complex_3S3M():
@@ -13,6 +14,7 @@ def test_analyse_complex_3S3M():
         refine=True,
         lig_format='sdf',
     )
+    contacts_ref = contacts_to_dict(contacts_ref)
 
     assert len(contacts_ref["Hydrophobic"]) == 2
     assert len(contacts_ref["Pi_Stacking"]) == 3
@@ -34,6 +36,7 @@ def test_analyse_complex_5N9T():
         refine=True,
         lig_format='sdf',
     )
+    contacts_ref = contacts_to_dict(contacts_ref)
 
     assert len(contacts_ref["Hydrophobic"]) == 7
     assert len(contacts_ref["Pi_Hydrophobic"]) == 2
