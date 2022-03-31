@@ -61,7 +61,7 @@ def select_best_contact(set1, mode='hydrophobic'):
             elif mode == 'pi_hydrophobic':
                 filter_out += [pair1] if pair1.offset > pair2.offset else [pair2]
             elif mode == 'h_bond' and len(pair1_lig_ids) == len(pair2_lig_ids) == 2:
-                filter_out += [pair1] if pair1.angle_dha > pair2.angle_dha else [pair1]
+                filter_out += [pair1] if pair1.angle_dha > pair2.angle_dha else [pair2]
     logger.debug(
         f'Removing the following contacts: '
         f'{[(p.receptor[0].unique_id, p.ligand[0].unique_id) for p in filter_out]}'
