@@ -11,6 +11,8 @@
 # 4/ N. K. Shinada, A. G. de Brevern, P. Schmidtke Halogens in Protein–Ligand Binding Mechanism: A Structural Perspective, 2019, J. Med. Chem., 62, 21, 9341–9356
 # 5/ B. Kuhn, E. Gilberg, R. Taylorn J. Cole, O. Korb How Significant Are Unusual Protein−Ligand Interactions? Insights from Database Mining, 2019, J. Med. Chem, 62, 22, 10441–10455
 
+from typing import Any, Dict, List
+
 AROMATIC_PLANARITY = 5.0  # max allowed deviation from planarity in aromatic rings
 # Coordination numbers and geometries for metal complexes detection
 METAL_COMPLEX_COO = {
@@ -86,5 +88,67 @@ METAL_IONS = [
     'TL',
     'PB',
 ]
+
+# Dict of charged AAs and cofactors, used by PLIP analysis
+# Note: protonated HIS should be HIP, protonated ASP should be ASH, etc.
+# but here we consider all of these AAs as potentially charged
+CHARGED_RESIDUES: Dict[str, List[Dict[str, Any]]] = {
+    'ARG': [{
+        'fgroup': 'iminium',
+        'charge': 'positive',
+        'on_atoms': ['CZ', 'NE', 'NH1', 'NH2'],
+    }],
+    'ASP': [{
+        'fgroup': 'carboxylate',
+        'charge': 'negative',
+        'on_atoms': ['CG', 'OD1', 'OD2'],
+    }],
+    'ASH': [{
+        'fgroup': 'carboxylate',
+        'charge': 'negative',
+        'on_atoms': ['CG', 'OD1', 'OD2'],
+    }],
+    'GLU': [{
+        'fgroup': 'carboxylate',
+        'charge': 'negative',
+        'on_atoms': ['CD', 'OE1', 'OE2'],
+    }],
+    'GLH': [{
+        'fgroup': 'carboxylate',
+        'charge': 'negative',
+        'on_atoms': ['CD', 'OE1', 'OE2'],
+    }],
+    'LYS': [{'fgroup': 'ammonium', 'charge': 'positive', 'on_atoms': ['NZ']}],
+    'LYN': [{'fgroup': 'ammonium', 'charge': 'positive', 'on_atoms': ['NZ']}],
+    'HIS': [{
+        'fgroup': 'iminium',
+        'charge': 'positive',
+        'on_atoms': ['ND1', 'NE2', 'CE1'],
+    }],
+    'HID': [{
+        'fgroup': 'iminium',
+        'charge': 'positive',
+        'on_atoms': ['ND1', 'NE2', 'CE1'],
+    }],
+    'HIE': [{
+        'fgroup': 'iminium',
+        'charge': 'positive',
+        'on_atoms': ['ND1', 'NE2', 'CE1'],
+    }],
+    'HIP': [{
+        'fgroup': 'iminium',
+        'charge': 'positive',
+        'on_atoms': ['ND1', 'NE2', 'CE1'],
+    }],
+    'NAD': [{
+        'fgroup': 'phosphate',
+        'charge': 'negative',
+        'on_atoms': ['PA', 'O1A', 'O2A'],
+    }, {
+        'fgroup': 'phosphate',
+        'charge': 'negative',
+        'on_atoms': ['PN', 'O1N', 'O2N'],
+    }],
+}
 
 # fmt: on

@@ -5,7 +5,6 @@ from logging import getLogger
 from typing import Any, List, NamedTuple
 
 import numpy as np
-from iktos.structure_utils.pdb.constants import CHARGED_RESIDUES
 
 try:
     from openbabel.openbabel import (  # openbabel 3
@@ -339,8 +338,8 @@ class Mol:
             obres = obatom.GetResidue()
             residue_name = obres.GetName().replace(' ', '')
             atom_name = obres.GetAtomID(obatom).replace(' ', '')
-            if residue_name in CHARGED_RESIDUES:
-                for charged_group in CHARGED_RESIDUES[residue_name]:
+            if residue_name in constants.CHARGED_RESIDUES:
+                for charged_group in constants.CHARGED_RESIDUES[residue_name]:
                     if atom_name == charged_group['on_atoms'][0]:
                         obatms = [
                             obatm
