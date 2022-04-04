@@ -2,9 +2,10 @@ from __future__ import absolute_import
 
 from builtins import filter
 from logging import getLogger
-from typing import Any, List, NamedTuple
+from typing import List, NamedTuple
 
 import numpy as np
+import numpy.typing as npt
 
 try:
     from openbabel.openbabel import (  # openbabel 3
@@ -39,7 +40,7 @@ logger = getLogger(__name__)
 
 
 class Mol:
-    def __init__(self, mol_type):
+    def __init__(self, mol_type: str):
         """
         Class with functions to identify atomic properties
         (e.g. hydrophobic, charged, etc)
@@ -58,8 +59,8 @@ class Mol:
 
         class data(NamedTuple):
             atom_list: List[Atom]
-            normal: Any
-            center: Any
+            normal: npt.NDArray
+            center: npt.NDArray
             type: str
 
         aromatic_amino = ['TYR', 'TRP', 'HIS', 'HID', 'HIE', 'HIP', 'HSD', 'HSE', 'PHE']
@@ -246,8 +247,8 @@ class Mol:
 
         class data(NamedTuple):
             atom_list: List[Atom]
-            normal: Any
-            center: Any
+            normal: npt.NDArray
+            center: npt.NDArray
             type: str
 
         selection = []
@@ -286,7 +287,7 @@ class Mol:
 
         class data(NamedTuple):
             atom_list: List[Atom]
-            location: Any
+            location: str
 
         selection = []
         obatoms_filtered = filter(
@@ -308,7 +309,7 @@ class Mol:
 
         class data(NamedTuple):
             atom_list: List[Atom]
-            location: Any
+            location: str
 
         selection = []
         obatoms_filtered = filter(lambda obatom: atom_has_lone_pair(obatom), obatoms)
@@ -329,7 +330,7 @@ class Mol:
         class data(NamedTuple):
             atom_list: List[Atom]
             charge: str
-            center: Any
+            center: npt.NDArray
             fgroup: str
 
         selection = []
