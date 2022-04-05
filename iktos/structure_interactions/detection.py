@@ -760,7 +760,7 @@ def find_metal_complexes(  # noqa: C901
                                         single_binder_scores.append(best_match_diff)
                                 # Calculate RMS for binder angles
                                 score = (
-                                    sum([x ** 2 for x in single_binder_scores]) ** 0.5
+                                    sum([x**2 for x in single_binder_scores]) ** 0.5
                                 )
                                 if score < best_score:
                                     best_score = score
