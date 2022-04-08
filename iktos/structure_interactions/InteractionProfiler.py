@@ -486,6 +486,7 @@ class InteractionProfiler:
             + self.mulipolar_all  # type: ignore [operator]
             + self.salt_bridges_all  # type: ignore [operator]
             + self.metal_complexes  # type: ignore [operator]
+            + self.water_bridges_all  # type: ignore [operator]
         )
 
     def _refine_interactions(self):
