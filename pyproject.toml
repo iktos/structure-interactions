@@ -1,5 +1,4 @@
 [tool.poetry]
-# TODO change your-package-name
 authors = ["Iktos"]
 description = "Ready to deliver"
 name = "iktos-structure-interactions"
@@ -8,7 +7,7 @@ packages = [
   {include = "iktos/**/*.py"},
 ]
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [[tool.poetry.source]]
 name = "iktos"
