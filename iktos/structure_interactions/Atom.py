@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from logging import getLogger
 
-from .utils import get_coords
+from .mol_utils import get_atom_name, get_coords
 
 logger = getLogger(__name__)
 
@@ -19,7 +19,13 @@ class Atom:
         self.mol_title = obatom.GetParent().GetTitle()
         self.atomic_num = obatom.GetAtomicNum()
         self.atom_id = obatom.GetId()
-        self.atom_name = obatom.GetResidue().GetAtomID(obatom).strip(' ')
+        # Get atom name: for ligands, concatenate element + ID
+        # because the property does not exist in SDF files,
+        # for protein/water, use `GetAtomID` (field in PDB files)
+        if self.mol_title == 'ligand':
+            self.atom_name = get_atom_name(obatom)
+        else:
+            self.atom_name = obatom.GetResidue().GetAtomID(obatom).strip(' ')
         self.is_aromatic = obatom.IsAromatic()
         self.hybridisation = obatom.GetHyb()
         self.residue_name = obatom.GetResidue().GetName()

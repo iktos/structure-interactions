@@ -25,7 +25,7 @@ except ModuleNotFoundError:
 from . import constants
 from .Atom import Atom
 from .math_utils import get_centroid, get_vector, normalize_vector
-from .utils import (
+from .mol_utils import (
     atom_has_lone_pair,
     get_coords,
     get_h_neighbours,

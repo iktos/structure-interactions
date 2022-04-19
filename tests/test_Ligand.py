@@ -5,11 +5,11 @@ Proprietary and confidential
 """
 
 from iktos.structure_interactions.Ligand import Ligand
-from iktos.structure_interactions.utils import read_mol
+from iktos.structure_interactions.mol_utils import read_obmol
 
 
 def test_identify_functional_groups_5N9T():
-    obmol = read_mol(
+    obmol = read_obmol(
         'tests/data/lig_5N9T.sdf',
         as_string=False,
         fmt='sdf',
@@ -29,7 +29,7 @@ def test_identify_functional_groups_5N9T():
 
 
 def test_identify_functional_groups_3S3M():
-    obmol = read_mol(
+    obmol = read_obmol(
         'tests/data/lig_3S3M.sdf',
         as_string=False,
         fmt='sdf',

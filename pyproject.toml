@@ -17,8 +17,6 @@ url = "https://pypi.golgoth.iktos.ai/simple"
 
 [tool.poetry.dependencies]
 coverage = "*"
-iktos-logger = "^2.0.2"
-iktos-structure-utils = "~3.1"
 python = "~3.7.1"
 
 [tool.mypy]
@@ -40,7 +38,7 @@ black = "black iktos/"
 check-black = "black iktos/ --check"
 isort = "isort iktos/"
 linter = "flake8 iktos/"
-mypy = "mypy iktos/"
+mypy = "mypy iktos/ --ignore-missing-imports"
 pc-black = "black "
 pc-check-black = "black --check"
 pc-isort = "isort "

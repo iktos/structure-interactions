@@ -4,8 +4,6 @@ from itertools import product
 from logging import getLogger
 from typing import List, Sequence, Union
 
-from iktos.structure_utils.file_manager.utils import file_to_blocks
-
 try:
     from openbabel.openbabel import OBResidueAtomIter, OBResidueIter  # openbabel 3
 except ModuleNotFoundError:
@@ -43,6 +41,7 @@ from .detection import (
 from .InteractionParameters import InteractionParameters
 from .Ligand import Ligand
 from .math_utils import get_centroid, get_euclidean_distance_3d
+from .mol_utils import get_coords, map_atom_ids, read_obmol
 from .Receptor import Receptor
 from .refinement import (
     refine_h_bonds,
@@ -51,7 +50,7 @@ from .refinement import (
     refine_pi_hydrophobics,
     refine_water_bridges,
 )
-from .utils import get_coords, map_atom_ids, parse_pdb, read_mol
+from .utils import parse_pdb
 from .Water import Water
 
 logger = getLogger(__name__)
@@ -104,7 +103,7 @@ class InteractionProfiler:
     def analyse_complexes(
         self,
         rec_coords: str,
-        lig_coords: Union[List, str],
+        lig_coords: List[str],
         lig_format: str = 'sdf',
         as_string: bool = True,
         refine: bool = True,
@@ -118,7 +117,7 @@ class InteractionProfiler:
 
         Args:
             rec_coords: name of receptor coords file or coords block (PDB format)
-            lig_coords: name of ligand multi coords file or list of coords blocks
+            lig_coords: list of file paths or list of coords blocks
             lig_format: format of lig_coords (recommended format is 'sdf')
             as_string: whether to read coords in files or from blocks
             refine: if True, cleanup double-counted contacts (e.g. hydrophobics + pi-stacking)
@@ -130,14 +129,13 @@ class InteractionProfiler:
         status = self._load_receptor(rec_coords, as_string=as_string)
         if not status:
             return False
-        contacts = []  # type: List
-        if as_string:
-            lig_blocks = lig_coords
-        else:
-            lig_blocks = file_to_blocks(lig_coords, fmt=lig_format)
-        for lig in lig_blocks:
+        contacts: List = []
+        for lig in lig_coords:
             status = self._load_ligand(
-                lig, lig_format=lig_format, as_string=True, bs_dist=parameters.bs_dist
+                lig,
+                lig_format=lig_format,
+                as_string=as_string,
+                bs_dist=parameters.bs_dist,
             )
             if not status:
                 contacts.append({})
@@ -151,7 +149,7 @@ class InteractionProfiler:
         """Loads the receptor and initialises water object."""
         # Read and parse receptor file/string
         rec_coords_block, mapping = parse_pdb(rec_coords, as_string=as_string)
-        obmol_rec = read_mol(
+        obmol_rec = read_obmol(
             rec_coords_block, fmt='pdb', title='receptor', as_string=True
         )
         if obmol_rec is None:
@@ -178,7 +176,7 @@ class InteractionProfiler:
             )
 
         # Read and parse ligand file/string
-        obmol_lig = read_mol(
+        obmol_lig = read_obmol(
             lig_coords, fmt=lig_format, title='ligand', as_string=as_string
         )
         if obmol_lig is None:

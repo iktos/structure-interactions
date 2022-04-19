@@ -9,7 +9,7 @@ except ModuleNotFoundError:
 
 from .math_utils import get_centroid, get_euclidean_distance_3d
 from .Mol import Mol
-from .utils import get_coords
+from .mol_utils import get_coords
 
 logger = getLogger(__name__)
 
