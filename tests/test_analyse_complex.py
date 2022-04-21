@@ -1,13 +1,12 @@
-from iktos.structure_interactions.InteractionProfiler import InteractionProfiler
+from iktos.structure_interactions.analyse_complex import analyse_complex
 from iktos.structure_interactions.utils import contacts_to_dict
 
 
-def test_analyse_complex_3S3M():
+def test_analyse_complex_3s3m():
     protein_path = 'tests/data/prot_3S3M.pdb'
     ligand_path = 'tests/data/lig_3S3M.sdf'
 
-    plip = InteractionProfiler()
-    contacts_ref = plip.analyse_complex(
+    contacts_ref = analyse_complex(
         rec_coords=protein_path,
         lig_coords=ligand_path,
         as_string=False,
@@ -23,13 +22,12 @@ def test_analyse_complex_3S3M():
     assert len(contacts_ref["Water_Bridge"]) == 1
 
 
-def test_analyse_complex_5N9T():
+def test_analyse_complex_5n9t():
 
     protein_path = 'tests/data/prot_5N9T.pdb'
     ligand_path = 'tests/data/lig_5N9T.sdf'
 
-    plip = InteractionProfiler()
-    contacts_ref = plip.analyse_complex(
+    contacts_ref = analyse_complex(
         rec_coords=protein_path,
         lig_coords=ligand_path,
         as_string=False,

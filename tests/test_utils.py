@@ -1,7 +1,8 @@
 import json
+
 from deepdiff import DeepDiff
 
-from iktos.structure_interactions.InteractionProfiler import InteractionProfiler
+from iktos.structure_interactions.analyse_complex import analyse_complex
 from iktos.structure_interactions.utils import contacts_to_dict
 
 
@@ -13,8 +14,7 @@ def test_contacts_to_dict():
     protein_path = 'tests/data/prot_5UIT.pdb'
     ligand_path = 'tests/data/lig_5UIT.sdf'
 
-    plip = InteractionProfiler()
-    contacts_ref = plip.analyse_complex(
+    contacts_ref = analyse_complex(
         rec_coords=protein_path,
         lig_coords=ligand_path,
         as_string=False,

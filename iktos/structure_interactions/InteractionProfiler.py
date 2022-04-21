@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from itertools import product
 from logging import getLogger
-from typing import List, Sequence, Union
+from typing import Sequence, Union
 
 try:
     from openbabel.openbabel import OBResidueAtomIter, OBResidueIter  # openbabel 3
@@ -62,90 +62,7 @@ class InteractionProfiler:
     version of PLIP (Protein-Ligand Interaction Profiler)
     """
 
-    def analyse_complex(
-        self,
-        rec_coords: str,
-        lig_coords: str,
-        lig_format: str = 'sdf',
-        as_string: bool = True,
-        refine: bool = True,
-        parameters: InteractionParameters = InteractionParameters(),
-    ):
-        """Performs protein-ligand interaction analysis for 1 complex.
-
-        Note: The current version of the code fails to detect negatively charged groups
-        (e.g. COO-) if ligand coords are given in MOL2 format.
-
-        Args:
-            rec_coords: name of receptor coords file or coords block (PDB format)
-            lig_coords: name of ligand multi coords file or coords block
-            lig_format: format of lig_coords (recommended format is 'sdf')
-            as_string: whether to read coords in files or from blocks
-            refine: if True, cleanup double-counted contacts (e.g. hydrophobics + pi-stacking)
-            parameters: parameters of class InteractionParameters
-
-        Returns:
-            contacts in a formatted dict
-        """
-        status = self._load_receptor(rec_coords, as_string=as_string)
-        if not status:
-            return False
-        status = self._load_ligand(
-            lig_coords,
-            lig_format=lig_format,
-            as_string=as_string,
-            bs_dist=parameters.bs_dist,
-        )
-        if not status:
-            return False
-        return self._analyse_interactions(refine=refine, parameters=parameters)
-
-    def analyse_complexes(
-        self,
-        rec_coords: str,
-        lig_coords: List[str],
-        lig_format: str = 'sdf',
-        as_string: bool = True,
-        refine: bool = True,
-        parameters: InteractionParameters = InteractionParameters(),
-    ):
-        """Performs protein-ligand interaction analysis
-        for multiple complexes that share the same recpetor.
-
-        Note: The current version of the code fails to detect negatively charged groups
-        (e.g. COO-) if ligand coords are given in MOL2 format.
-
-        Args:
-            rec_coords: name of receptor coords file or coords block (PDB format)
-            lig_coords: list of file paths or list of coords blocks
-            lig_format: format of lig_coords (recommended format is 'sdf')
-            as_string: whether to read coords in files or from blocks
-            refine: if True, cleanup double-counted contacts (e.g. hydrophobics + pi-stacking)
-            parameters: parameters of class InteractionParameters
-
-        Returns:
-            list of contacts in a formatted dict
-        """
-        status = self._load_receptor(rec_coords, as_string=as_string)
-        if not status:
-            return False
-        contacts: List = []
-        for lig in lig_coords:
-            status = self._load_ligand(
-                lig,
-                lig_format=lig_format,
-                as_string=as_string,
-                bs_dist=parameters.bs_dist,
-            )
-            if not status:
-                contacts.append({})
-            else:
-                contacts.append(
-                    self._analyse_interactions(refine=refine, parameters=parameters)
-                )
-        return contacts
-
-    def _load_receptor(self, rec_coords: str, as_string: bool) -> bool:
+    def load_receptor(self, rec_coords: str, as_string: bool) -> bool:
         """Loads the receptor and initialises water object."""
         # Read and parse receptor file/string
         rec_coords_block, mapping = parse_pdb(rec_coords, as_string=as_string)
@@ -165,7 +82,7 @@ class InteractionProfiler:
         self.rec = Receptor(self.obmol_rec)
         return True
 
-    def _load_ligand(
+    def load_ligand(
         self, lig_coords: str, lig_format: str, as_string: bool, bs_dist: float
     ) -> bool:
         """Loads the ligand and initialises ligand and binding site objects."""
@@ -197,7 +114,7 @@ class InteractionProfiler:
         self.wat.identify_functional_groups(water_atoms)
         return True
 
-    def _analyse_interactions(self, refine: bool, parameters: InteractionParameters):
+    def analyse_interactions(self, refine: bool, parameters: InteractionParameters):
         """Performs protein-ligand interaction analysis
         for 1 complex (after initialisation of the objects)."""
         # Setup PLIP config
