@@ -1,7 +1,11 @@
 from __future__ import absolute_import
 
-from logging import getLogger
 from typing import Any, Dict, List, Sequence
+
+try:
+    from iktos.logger import getLogger
+except ImportError:
+    from logging import getLogger
 
 
 logger = getLogger(__name__)

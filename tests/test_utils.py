@@ -1,4 +1,5 @@
 import json
+from deepdiff import DeepDiff
 
 from iktos.structure_interactions.InteractionProfiler import InteractionProfiler
 from iktos.structure_interactions.utils import contacts_to_dict
@@ -24,4 +25,4 @@ def test_contacts_to_dict():
 
     with open('tests/data/contacts_5UIT.json', 'r') as f:
         expected_contacts = json.load(f)
-    assert contacts_ref == expected_contacts
+    assert not DeepDiff(contacts_ref, expected_contacts, ignore_order=True)
