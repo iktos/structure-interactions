@@ -1,11 +1,15 @@
 from __future__ import absolute_import
 
 from builtins import filter
-from logging import getLogger
 from typing import List, NamedTuple
 
 import numpy as np
 import numpy.typing as npt
+
+try:
+    from iktos.logger import getLogger
+except ImportError:
+    from logging import getLogger
 
 try:
     from openbabel.openbabel import (  # openbabel 3

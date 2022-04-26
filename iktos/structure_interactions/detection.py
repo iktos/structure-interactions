@@ -2,8 +2,12 @@ from __future__ import absolute_import
 
 from collections import defaultdict
 from itertools import product
-from logging import getLogger
 from typing import List, NamedTuple
+
+try:
+    from iktos.logger import getLogger
+except ImportError:
+    from logging import getLogger
 
 import numpy as np
 

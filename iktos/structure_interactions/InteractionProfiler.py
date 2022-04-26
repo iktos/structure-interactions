@@ -1,8 +1,12 @@
 from __future__ import absolute_import
 
 from itertools import product
-from logging import getLogger
 from typing import Sequence, Union
+
+try:
+    from iktos.logger import getLogger
+except ImportError:
+    from logging import getLogger
 
 try:
     from openbabel.openbabel import OBResidueAtomIter, OBResidueIter  # openbabel 3
