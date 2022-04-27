@@ -44,7 +44,6 @@ def analyse_complex(
 
 
 def analyse_complexes(
-    self,
     rec_coords: str,
     lig_coords: List[str],
     lig_format: str = 'sdf',
@@ -76,7 +75,7 @@ def analyse_complexes(
         return None
     contacts = []  # type: List
     for lig in lig_coords:
-        status = self._load_ligand(
+        status = plip.load_ligand(
             lig,
             lig_format=lig_format,
             as_string=as_string,
@@ -86,6 +85,6 @@ def analyse_complexes(
             contacts.append({})
         else:
             contacts.append(
-                self._analyse_interactions(refine=refine, parameters=parameters)
+                plip.analyse_interactions(refine=refine, parameters=parameters)
             )
     return contacts
