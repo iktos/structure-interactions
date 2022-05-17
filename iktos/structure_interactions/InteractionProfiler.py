@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 
-from itertools import product
 from typing import Sequence, Union
+
+from sklearn.neighbors import BallTree
 
 try:
     from iktos.logger import getLogger
@@ -44,8 +45,7 @@ from .detection import (
 )
 from .InteractionParameters import InteractionParameters
 from .Ligand import Ligand
-from .math_utils import get_centroid, get_euclidean_distance_3d
-from .mol_utils import get_coords, map_atom_ids, read_obmol
+from .mol_utils import map_atom_ids, read_obmol
 from .Receptor import Receptor
 from .refinement import (
     refine_h_bonds,
@@ -139,55 +139,37 @@ class InteractionProfiler:
         """
         Select atoms that belong to the binding site
         """
-        # Select binding site residues
-        cutoff = self.lig.max_dist_to_center + bs_dist
-        obres_rec = [
-            obres
-            for obres in OBResidueIter(self.obmol_rec)
-            # if not obres.GetResidueProperty(9)
-        ]
-        bs_residues = []
-        for obres in obres_rec:
-            residue_centroid = get_centroid(
-                [get_coords(a) for a in OBResidueAtomIter(obres)]
-            )
-            distance = get_euclidean_distance_3d(residue_centroid, self.lig.centroid)
-            if distance < cutoff:
-                bs_residues.append(obres)
-        bs_atoms = [
-            a
-            for r in bs_residues
-            for a in OBResidueAtomIter(r)
-            if not r.GetResidueProperty(9)
-        ]
-        water_atoms = [
-            a
-            for r in bs_residues
-            for a in OBResidueAtomIter(r)
-            if r.GetResidueProperty(9)
-        ]
-        logger.debug(f'Found {len(bs_atoms)} atoms near ligand')
-
+        obres_rec = [obres for obres in OBResidueIter(self.obmol_rec)]
+        obatoms_rec = []
+        water_rec = []
+        for residue in obres_rec:
+            if not residue.GetResidueProperty(9):
+                obatoms_rec += [atom for atom in OBResidueAtomIter(residue)]
+            else:
+                water_rec += [atom for atom in OBResidueAtomIter(residue)]
+        all_atoms = np.array(obatoms_rec + water_rec)
         # Extracting residue atoms coordinates:
-        coords_r = np.array([get_coords(obatom_r) for obatom_r in bs_atoms])
-        # Extracting ligand atoms coordinates:
-        coords_l = np.array([get_coords(obatom_l) for obatom_l in self.lig.atoms])
-        # We want to calculate the distance for each unique pair of (coords_r, coords_l)
-        product_rl = np.array(list(product(coords_r, coords_l)))
-        # Calculating the distances and keeping only the indexes for those being below our criterion:
-        idx = np.argwhere(
-            get_euclidean_distance_3d(product_rl[:, 0], product_rl[:, 1]).reshape(
-                coords_r.shape[0], coords_l.shape[0]
-            )
-            < bs_dist
+        coords_atom_rec = np.array(
+            [
+                (obatom_r.GetX(), obatom_r.GetY(), obatom_r.GetZ())
+                for obatom_r in all_atoms
+            ]
         )
-
-        # Selecting the first atoms for each coords_r which respect the distance criterion:
-        bs_atoms_refined = [bs_atoms[idx[0, 0]]]
-        for (i_p, _), (i, _) in zip(idx[:-1], idx[1:]):
-            if i_p != i:
-                bs_atoms_refined.append(bs_atoms[i])
-
+        # Extracting ligand atoms coordinates:
+        coords_l = np.array(
+            [
+                (obatom_l.GetX(), obatom_l.GetY(), obatom_l.GetZ())
+                for obatom_l in self.lig.atoms
+            ]
+        )
+        # Use Ball Tree to store coords and to efficiently compute the distance between receptor and ligand's atoms
+        tree = BallTree(coords_atom_rec, leaf_size=5)
+        # Get the index of atoms near the ligand
+        ind = np.unique(np.concatenate(tree.query_radius(coords_l, r=bs_dist)))
+        ind_atom_receptor, *_ = np.where(ind < len(obatoms_rec))
+        ind_water, *_ = np.where(ind >= len(obatoms_rec))
+        bs_atoms_refined = all_atoms[ind[ind_atom_receptor]]
+        water_atoms = all_atoms[ind[ind_water]]
         logger.debug(f'Selected {len(bs_atoms_refined)} atoms as binding site')
         return bs_atoms_refined, water_atoms
 

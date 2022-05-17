@@ -17,9 +17,9 @@ try:
         OBAtom,
         OBAtomAtomIter,
         OBConversion,
-        obErrorLog,
         OBMol,
         OBMolAtomIter,
+        obErrorLog,
     )
 
     obabel_version = 3
@@ -28,16 +28,15 @@ except ModuleNotFoundError:
         OBAtom,
         OBAtomAtomIter,
         OBElementTable,
-        obErrorLog,
         OBMol,
         OBMolAtomIter,
+        obErrorLog,
     )
 
     obabel_version = 2
 
 from . import constants
 from .math_utils import get_vector, get_vector_angle
-
 
 logger = getLogger(__name__)
 
