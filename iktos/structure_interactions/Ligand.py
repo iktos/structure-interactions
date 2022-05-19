@@ -21,7 +21,8 @@ class Ligand(Mol):
     """Class to store ligand atoms and their properties"""
 
     def __init__(self, obmol_lig):
-        Mol.__init__(self, mol_type='ligand')
+        super().__init__()
+
         self.obmol = obmol_lig
         self.atoms = [a for a in OBMolAtomIter(self.obmol)]
         logger.debug(f'Found {len(self.atoms)} atoms in ligand')
@@ -44,8 +45,8 @@ class Ligand(Mol):
         self.charged_atoms = self.find_charged_atoms(self.atoms)
 
         # Find metals and metal binders (atoms with lone pair)
-        self.metals = self.find_metals(self.atoms)
-        self.metal_binders = self.find_metal_binders(self.atoms)
+        self.metals = self.find_metals(self.atoms, 'ligand')
+        self.metal_binders = self.find_metal_binders(self.atoms, 'ligand')
 
         # Find halogens
         self.halogens = self.find_halogens(self.atoms)

@@ -44,12 +44,12 @@ logger = getLogger(__name__)
 
 
 class Mol:
-    def __init__(self, mol_type: str):
-        """
-        Class with functions to identify atomic properties
+    def __init__(self):
+        """Class with functions to identify atomic properties
         (e.g. hydrophobic, charged, etc)
+
+        TODO: convert to functions
         """
-        self.mol_type = mol_type
 
     def identify_functional_groups(self):
         raise NotImplementedError
@@ -73,11 +73,15 @@ class Mol:
         obmol_atoms = list(OBMolAtomIter(obmol))
         for obring in all_rings:
             ring_atoms = [a for a in obmol_atoms if obring.IsMember(a)]
-            obresidue = ring_atoms[0].GetResidue().GetName()
+
+            # Residue name is only relevant for the proteins
+            residue_name = ''
+            if ring_atoms[0].GetResidue() is not None:
+                residue_name = ring_atoms[0].GetResidue().GetName()
             if len(ring_atoms) not in [5, 6]:
                 continue  # ignore rings of unusual size
             if (
-                obresidue in aromatic_amino
+                residue_name in aromatic_amino
                 or obring.IsAromatic()
                 or ring_is_aromatic(ring_atoms)
                 or ring_is_planar(obring, ring_atoms)
@@ -283,7 +287,7 @@ class Mol:
         logger.debug(f'Found {len(selection)} pi-carbon(s)')
         return selection
 
-    def find_metals(self, obatoms: List[OBAtom]) -> List:
+    def find_metals(self, obatoms: List[OBAtom], location: str) -> List:
         """Finds metals.
 
         Atom list contains [M]
@@ -299,11 +303,11 @@ class Mol:
             obatoms,
         )
         for obatom in obatoms_filtered:
-            selection.append(data(atom_list=[Atom(obatom)], location=self.mol_type))
+            selection.append(data(atom_list=[Atom(obatom)], location=location))
         logger.debug(f'Found {len(selection)} metal atom(s)')
         return selection
 
-    def find_metal_binders(self, obatoms: List[OBAtom]) -> List:
+    def find_metal_binders(self, obatoms: List[OBAtom], location: str) -> List:
         """Finds atoms/groups that can be involved in binding metal ions
         e.g. oxygen from carboxylate, phophoryl, phenolate, alcohol;
         nitrogen from imidazole; sulfur from thiolate.
@@ -318,7 +322,7 @@ class Mol:
         selection = []
         obatoms_filtered = filter(lambda obatom: atom_has_lone_pair(obatom), obatoms)
         for obatom in obatoms_filtered:
-            selection.append(data(atom_list=[Atom(obatom)], location=self.mol_type))
+            selection.append(data(atom_list=[Atom(obatom)], location=location))
         logger.debug(f'Found {len(selection)} metal binder(s)')
         return selection
 
@@ -341,19 +345,27 @@ class Mol:
         for obatom in obatoms:
             charge = None
             obres = obatom.GetResidue()
-            residue_name = obres.GetName().replace(' ', '')
-            atom_name = obres.GetAtomID(obatom).replace(' ', '')
-            if residue_name in constants.CHARGED_RESIDUES:
-                for charged_group in constants.CHARGED_RESIDUES[residue_name]:
-                    if atom_name == charged_group['on_atoms'][0]:
-                        obatms = [
-                            obatm
-                            for obatm in OBResidueAtomIter(obres)
-                            if obres.GetAtomID(obatm).replace(' ', '')
-                            in charged_group['on_atoms']
-                        ]
-                        fgroup = charged_group['fgroup']
-                        charge = charged_group['charge']
+            if obres is not None:
+                obres = obatom.GetResidue()
+                residue_name = obres.GetName().replace(' ', '')
+                atom_name = obres.GetAtomID(obatom).replace(' ', '')
+                # For protein residues, charged groups are tabulated
+                # If the residue does not appear in the list of known charged residues,
+                # then we check the charge as we do with ligands (note: a ligand can be
+                # a peptide and appear in CHARGED_RESIDUES)
+                if residue_name in constants.CHARGED_RESIDUES:
+                    for charged_group in constants.CHARGED_RESIDUES[residue_name]:
+                        if atom_name == charged_group['on_atoms'][0]:
+                            obatms = [
+                                obatm
+                                for obatm in OBResidueAtomIter(obres)
+                                if obres.GetAtomID(obatm).replace(' ', '')
+                                in charged_group['on_atoms']
+                            ]
+                            fgroup = charged_group['fgroup']
+                            charge = charged_group['charge']
+                elif obatom.GetFormalCharge() != 0:
+                    fgroup, charge, obatms = identify_charged_group(obatom)
             elif obatom.GetFormalCharge() != 0:
                 fgroup, charge, obatms = identify_charged_group(obatom)
             if charge in ['positive', 'negative']:

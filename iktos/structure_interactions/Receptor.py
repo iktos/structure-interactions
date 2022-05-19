@@ -14,7 +14,7 @@ class Receptor(Mol):
     """Class to store binding site atoms and their properties"""
 
     def __init__(self, obmol_rec):
-        Mol.__init__(self, mol_type='receptor')
+        super().__init__()
 
         # Find rings
         self.rings = self.find_rings(obmol_rec)
@@ -22,7 +22,7 @@ class Receptor(Mol):
 
     def identify_functional_groups(self, obatoms_bs):
         logger.debug('Identifying functional groups in receptor')
-        self.atoms = obatoms_bs
+        self.atoms = obatoms_bs  # receptor atoms in the binding site except water
 
         # Find hydrophobic atoms
         self.hydrophobics = self.find_hydrophobics(self.atoms)
@@ -35,8 +35,8 @@ class Receptor(Mol):
         self.charged_atoms = self.find_charged_atoms(self.atoms)
 
         # Find metals and metal binders (atoms with lone pair)
-        self.metals = self.find_metals(self.atoms)
-        self.metal_binders = self.find_metal_binders(self.atoms)
+        self.metals = self.find_metals(self.atoms, 'receptor')
+        self.metal_binders = self.find_metal_binders(self.atoms, 'receptor')
 
         # Find halogens (there should not be any but just in case)
         self.halogens = self.find_halogens(self.atoms)

@@ -81,7 +81,7 @@ class InteractionProfiler:
 
         # Initialise water and receptor objects
         logger.info('Initialising water object')
-        self.wat = Water(self.obmol_rec)
+        self.wat = Water()
         logger.info('Initialising receptor object')
         self.rec = Receptor(self.obmol_rec)
         return True
@@ -92,8 +92,10 @@ class InteractionProfiler:
         """Loads the ligand and initialises ligand and binding site objects."""
         if lig_format != 'sdf':
             logger.warning(
-                'It is recommended to use SDF blocks/files for the ligand, '
-                'some interactions might be missed otherwise'
+                'It is recommended to use SDF blocks/files for the ligand; '
+                'for other formats, make sure that formal (not partial) atomic charges '
+                'are explicitely defined (otherwise negative charges like C(=O)[O-] '
+                'will be missed)'
             )
 
         # Read and parse ligand file/string

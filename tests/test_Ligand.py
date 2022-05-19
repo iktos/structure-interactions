@@ -9,11 +9,8 @@ from iktos.structure_interactions.mol_utils import read_obmol
 
 
 def test_identify_functional_groups_5N9T():
-    obmol = read_obmol(
-        'tests/data/lig_5N9T.sdf',
-        as_string=False,
-        fmt='sdf',
-    )
+    file = 'tests/data/lig_5N9T.sdf'
+    obmol = read_obmol(file, as_string=False, fmt='sdf', title='ligand')
     ligand = Ligand(obmol)
     ligand.identify_functional_groups()
     assert len(ligand.rings) == 4
@@ -29,11 +26,8 @@ def test_identify_functional_groups_5N9T():
 
 
 def test_identify_functional_groups_3S3M():
-    obmol = read_obmol(
-        'tests/data/lig_3S3M.sdf',
-        as_string=False,
-        fmt='sdf',
-    )
+    file = 'tests/data/lig_3S3M.sdf'
+    obmol = read_obmol(file, as_string=False, fmt='sdf', title='ligand')
     ligand = Ligand(obmol)
     ligand.identify_functional_groups()
     assert len(ligand.rings) == 2
@@ -44,5 +38,26 @@ def test_identify_functional_groups_3S3M():
     assert len(ligand.halogens) == 2
     assert len(ligand.x_bond_acceptors) == 5
     assert len(ligand.pi_carbons) == 2
+    assert len(ligand.metal_binders) == 5
+    assert len(ligand.metals) == 0
+
+
+def test_identify_functional_groups_old_bug():
+    # This SDF used to fail with an AttributeError related to a missing residue
+    # The residue was correctly created by 'read_mol' but then disappeared
+    # New strategy: 'read_mol' does not try to create a residue if there is none,
+    # the rest of the code is made to handle with/without residue on the ligand side
+    file = 'tests/data/ligand_bug_residue.sdf'
+    obmol = read_obmol(file, as_string=False, fmt='sdf', title='ligand')
+    ligand = Ligand(obmol)
+    ligand.identify_functional_groups()
+    assert len(ligand.rings) == 1
+    assert len(ligand.hydrophobics) == 4
+    assert len(ligand.h_bond_acceptors) == 4
+    assert len(ligand.h_bond_donors) == 9
+    assert len(ligand.charged_atoms) == 0
+    assert len(ligand.halogens) == 0
+    assert len(ligand.x_bond_acceptors) == 5
+    assert len(ligand.pi_carbons) == 0  # acid excluded
     assert len(ligand.metal_binders) == 5
     assert len(ligand.metals) == 0

@@ -319,21 +319,6 @@ def get_atom_name(obatom: OBAtom) -> str:
     return f'{OBElementTable().GetSymbol(obatom.GetAtomicNum())}{obatom.GetIdx()}'
 
 
-def _create_residue(obmol: OBMol) -> None:
-    """Creates a residue, updates obmol in place."""
-    # Create a new residue
-    obres = obmol.NewResidue()
-
-    # Set residue name and number
-    obres.SetName('UNL')
-    obres.SetNum(1)
-
-    # Loop over atoms and add them to the new residue
-    for obatom in OBMolAtomIter(obmol):
-        obres.AddAtom(obatom)
-        # obatom.AddResidue(obres)
-
-
 def read_obmol(
     coords: str, fmt: str, as_string: bool, title: str = ''
 ) -> Optional[OBMol]:
@@ -344,7 +329,9 @@ def read_obmol(
         fmt: format of input (sdf, mol2, pdb).
         as_string: specifies whether the input is given as a block
             (if True) or a path (if False).
-        title: title to give to the OBMol object.
+        title: title to give to the OBMol object (used to identify contacts
+            and refine them, and to create atom names for ligands,
+            TODO: re-work, this bit is confusing as hell).
 
     Returns:
         OBMol object
@@ -361,11 +348,6 @@ def read_obmol(
     obconversion.ReadString(obmol, coords)
     if obmol is None:
         raise ValueError('Invalid molecule')
-
-    # Check residues
-    if obmol.NumResidues() == 0:
-        # logger.warning('No residue perceived for input mol -> creating a `UNL` residue')
-        _create_residue(obmol)
 
     # Update some tags and properties
     obmol.PerceiveBondOrders()  # assign multiple bonds

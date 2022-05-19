@@ -13,8 +13,8 @@ logger = getLogger(__name__)
 class Water(Mol):
     """Class to store water atoms and their properties"""
 
-    def __init__(self, obmol_rec):
-        Mol.__init__(self, mol_type='water')
+    def __init__(self):
+        super().__init__()
 
     def identify_functional_groups(self, obatoms_bs):
         logger.debug('Identifying functional groups in water')
@@ -28,4 +28,4 @@ class Water(Mol):
         self.x_bond_acceptors = self.find_x_bond_acceptors(self.atoms)
 
         # Find metal binding atoms
-        self.metal_binders = self.find_metal_binders(self.atoms)
+        self.metal_binders = self.find_metal_binders(self.atoms, 'water')
