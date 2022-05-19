@@ -5,7 +5,7 @@ repos:
         name: Black
         entry: poetry run task pc-black
         pass_filenames: true
-        types: [file, json, python]
+        types: [file, python]
         language: system
 
   - repo: local
