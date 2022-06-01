@@ -89,3 +89,18 @@ def test_read_obmol_9():
     assert obmol.NumResidues() == 0
     assert obmol.GetAtom(1).GetResidue().GetName() == 'UNL'
     assert obmol.NumResidues() == 1  # residue created out of the blue!
+
+
+def test_read_obmol_10():
+    smiles = 'toto'  # invalid -> raise error
+    with pytest.raises(ValueError):
+        read_obmol(smiles, as_string=True, fmt='smi')
+
+
+def test_read_obmol_11():
+    with pytest.raises(ValueError):
+        read_obmol(
+            'tests/data/lig_3S3M.sdf',
+            as_string=True,
+            fmt='mol2',  # wrong format
+        )

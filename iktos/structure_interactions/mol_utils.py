@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from copy import deepcopy
 from itertools import product
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 try:
     from iktos.logger import getLogger
@@ -319,9 +319,7 @@ def get_atom_name(obatom: OBAtom) -> str:
     return f'{OBElementTable().GetSymbol(obatom.GetAtomicNum())}{obatom.GetIdx()}'
 
 
-def read_obmol(
-    coords: str, fmt: str, as_string: bool, title: str = ''
-) -> Optional[OBMol]:
+def read_obmol(coords: str, fmt: str, as_string: bool, title: str = '') -> OBMol:
     """Loads a coords file/string (PDB, MOL2, SDF) with OpenBabel.
 
     Args:
@@ -334,7 +332,12 @@ def read_obmol(
             TODO: re-work, this bit is confusing as hell).
 
     Returns:
-        OBMol object
+        OBMol object.
+
+    Raises:
+        FileNotFoudError: if input file does not exist (only when `as_string`=False).
+        ValueError: if the input coords block or file is invalid
+            (i.e. obmol is None or number of atoms or bonds == 0).
     """
     obErrorLog.StopLogging()  # to avoid huge logs
     if not as_string:
@@ -347,6 +350,8 @@ def read_obmol(
     obconversion.SetInFormat(fmt)
     obconversion.ReadString(obmol, coords)
     if obmol is None:
+        raise ValueError('Invalid molecule')
+    if obmol.NumAtoms() == 0 or obmol.NumBonds() == 0:
         raise ValueError('Invalid molecule')
 
     # Update some tags and properties

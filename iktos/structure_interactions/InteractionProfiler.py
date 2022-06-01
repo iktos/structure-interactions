@@ -61,34 +61,30 @@ logger = getLogger(__name__)
 
 
 class InteractionProfiler:
-    """
-    Analyse protein-ligand interactions using an in-house
-    version of PLIP (Protein-Ligand Interaction Profiler)
+    """Class to analyse protein-ligand interactions using an in-house
+    version of PLIP (Protein-Ligand Interaction Profiler).
     """
 
-    def load_receptor(self, rec_coords: str, as_string: bool) -> bool:
+    def load_receptor(self, rec_coords: str, as_string: bool) -> None:
         """Loads the receptor and initialises water object."""
         # Read and parse receptor file/string
         rec_coords_block, mapping = parse_pdb(rec_coords, as_string=as_string)
         obmol_rec = read_obmol(
             rec_coords_block, fmt='pdb', title='receptor', as_string=True
         )
-        if obmol_rec is None:
-            return False
 
         # Map atom Id back to their original value
         self.obmol_rec = map_atom_ids(obmol_rec, mapping)
 
         # Initialise water and receptor objects
-        logger.info('Initialising water object')
+        logger.debug('Initialising water object')
         self.wat = Water()
         logger.info('Initialising receptor object')
         self.rec = Receptor(self.obmol_rec)
-        return True
 
     def load_ligand(
         self, lig_coords: str, lig_format: str, as_string: bool, bs_dist: float
-    ) -> bool:
+    ) -> None:
         """Loads the ligand and initialises ligand and binding site objects."""
         if lig_format != 'sdf':
             logger.warning(
@@ -102,23 +98,20 @@ class InteractionProfiler:
         obmol_lig = read_obmol(
             lig_coords, fmt=lig_format, title='ligand', as_string=as_string
         )
-        if obmol_lig is None:
-            return False
 
         # Map atom Id to their Idx value (1-based, needed by Pymol)
         obmol_lig = map_atom_ids(obmol_lig, None)
 
         # Initialise ligand object
-        logger.info('Initialising ligand object')
+        logger.debug('Initialising ligand object')
         self.lig = Ligand(obmol_lig)
         self.lig.identify_functional_groups()
 
         # Finalise initialisation of receptor and water objects
-        logger.info('Selecting binding site residues and atoms')
+        logger.debug('Selecting binding site residues and atoms')
         bs_atoms_refined, water_atoms = self._extract_binding_site(bs_dist=bs_dist)
         self.rec.identify_functional_groups(bs_atoms_refined)
         self.wat.identify_functional_groups(water_atoms)
-        return True
 
     def analyse_interactions(self, refine: bool, parameters: InteractionParameters):
         """Performs protein-ligand interaction analysis
@@ -180,7 +173,7 @@ class InteractionProfiler:
         Find all receptor-ligand interactions
         Call functions stroed in detection.py
         """
-        logger.info('Analysing interactions')
+        logger.debug('Analysing interactions')
         self.hydrophobics_all = find_hydrophobics(
             self.rec.hydrophobics,
             self.lig.hydrophobics,
@@ -396,7 +389,7 @@ class InteractionProfiler:
         """
         Find all receptor-ligand interactions
         """
-        logger.info('Refining selection')
+        logger.debug('Refining selection')
         self.hydrophobics = refine_hydrophobics(
             self.hydrophobics_all, self.pi_stackings_all, self.pi_hydrophobics_all
         )

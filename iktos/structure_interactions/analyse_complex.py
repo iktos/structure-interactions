@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
 from .InteractionParameters import InteractionParameters
 from .InteractionProfiler import InteractionProfiler
@@ -11,35 +11,37 @@ def analyse_complex(
     as_string: bool = True,
     refine: bool = True,
     parameters: InteractionParameters = InteractionParameters(),
-) -> Optional[Sequence]:
+) -> Sequence:
     """Performs protein-ligand interaction analysis for 1 complex.
 
-    Note: The current version of the code fails to detect negatively charged groups
-    (e.g. COO-) if ligand coords are given in MOL2 format.
+    Warnings:
+        The current version of the code fails to detect negatively charged groups
+            (e.g. COO-) if ligand coords are given in MOL2 format.
 
     Args:
-        rec_coords: name of receptor coords file or coords block (PDB format)
-        lig_coords: name of ligand multi coords file or coords block
-        lig_format: format of lig_coords (recommended format is 'sdf')
-        as_string: whether to read coords in files or from blocks
-        refine: if True, cleanup double-counted contacts (e.g. hydrophobics + pi-stacking)
-        parameters: parameters of class InteractionParameters
+        rec_coords: name of receptor coords file or coords block (PDB format).
+        lig_coords: name of ligand multi coords file or coords block.
+        lig_format: format of lig_coords (recommended format is 'sdf').
+        as_string: whether to read coords in files or from blocks.
+        refine: if True, cleanup double-counted contacts (e.g. hydrophobics + pi-stacking).
+        parameters: cutoffs to use for the detection of interactions.
 
     Returns:
-        contacts in a formatted dict
+        contact object.
+
+    Raises:
+        FileNotFoudError: if an input file does not exist (only when `as_string`=False).
+        ValueError: if one of the input coords block or file is invalid
+            (i.e. obmol is None or number of atoms or bonds == 0).
     """
     plip = InteractionProfiler()
-    status = plip.load_receptor(rec_coords, as_string=as_string)
-    if not status:
-        return None
-    status = plip.load_ligand(
+    plip.load_receptor(rec_coords, as_string=as_string)
+    plip.load_ligand(
         lig_coords,
         lig_format=lig_format,
         as_string=as_string,
         bs_dist=parameters.bs_dist,
     )
-    if not status:
-        return None
     return plip.analyse_interactions(refine=refine, parameters=parameters)
 
 
@@ -50,41 +52,39 @@ def analyse_complexes(
     as_string: bool = True,
     refine: bool = True,
     parameters: InteractionParameters = InteractionParameters(),
-) -> Optional[Sequence]:
-    """Performs protein-ligand interaction analysis
-    for multiple complexes that share the same recpetor.
+) -> List[Sequence]:
+    """Performs protein-ligand interaction analysis for multiple complexes
+    that share the same receptor.
 
-    Note: The current version of the code fails to detect negatively charged groups
-    (e.g. COO-) if ligand coords are given in MOL2 format.
+    Warnings:
+        The current version of the code fails to detect negatively charged groups
+            (e.g. COO-) if ligand coords are given in MOL2 format.
 
     Args:
-        rec_coords: name of receptor coords file or coords block (PDB format)
-        lig_coords: list of file paths or list of coords blocks
-        lig_format: format of lig_coords (recommended format is 'sdf')
-        as_string: whether to read coords in files or from blocks
-        refine: if True, cleanup double-counted contacts (e.g. hydrophobics + pi-stacking)
-        parameters: parameters of class InteractionParameters
+        rec_coords: name of receptor coords file or coords block (PDB format).
+        lig_coords: list of file paths or list of coords blocks.
+        lig_format: format of lig_coords (recommended format is 'sdf').
+        as_string: whether to read coords in files or from blocks.
+        refine: if True, cleanup double-counted contacts (e.g. hydrophobics + pi-stacking).
+        parameters: cutoffs to use for the detection of interactions.
 
     Returns:
-        list of contacts in a formatted dict
-    """
+        list of contact objects.
 
+    Raises:
+        FileNotFoudError: if an input file does not exist (only when `as_string`=False).
+        ValueError: if one of the input coords block or file is invalid
+            (i.e. obmol is None or number of atoms or bonds == 0).
+    """
     plip = InteractionProfiler()
-    status = plip.load_receptor(rec_coords, as_string=as_string)
-    if not status:
-        return None
+    plip.load_receptor(rec_coords, as_string=as_string)
     contacts = []  # type: List
     for lig in lig_coords:
-        status = plip.load_ligand(
+        plip.load_ligand(
             lig,
             lig_format=lig_format,
             as_string=as_string,
             bs_dist=parameters.bs_dist,
         )
-        if not status:
-            contacts.append({})
-        else:
-            contacts.append(
-                plip.analyse_interactions(refine=refine, parameters=parameters)
-            )
+        contacts.append(plip.analyse_interactions(refine=refine, parameters=parameters))
     return contacts
