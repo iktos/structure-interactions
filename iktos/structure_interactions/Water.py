@@ -5,12 +5,17 @@ try:
 except ImportError:
     from logging import getLogger
 
-from .Mol import Mol
+from .atom_typing import (
+    find_h_bond_acceptors,
+    find_h_bond_donors,
+    find_metal_binders,
+    find_x_bond_acceptors,
+)
 
 logger = getLogger(__name__)
 
 
-class Water(Mol):
+class Water:
     """Class to store water atoms and their properties"""
 
     def __init__(self):
@@ -21,11 +26,11 @@ class Water(Mol):
         self.atoms = obatoms_bs
 
         # Find H-bond donors and acceptors
-        self.h_bond_acceptors = self.find_h_bond_acceptors(self.atoms)
-        self.h_bond_donors = self.find_h_bond_donors(self.atoms)
+        self.h_bond_acceptors = find_h_bond_acceptors(self.atoms)
+        self.h_bond_donors = find_h_bond_donors(self.atoms)
 
         # Find halogen-bond acceptors
-        self.x_bond_acceptors = self.find_x_bond_acceptors(self.atoms)
+        self.x_bond_acceptors = find_x_bond_acceptors(self.atoms)
 
         # Find metal binding atoms
-        self.metal_binders = self.find_metal_binders(self.atoms, 'water')
+        self.metal_binders = find_metal_binders(self.atoms, 'water')

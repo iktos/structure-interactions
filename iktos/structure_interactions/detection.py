@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from collections import defaultdict
 from itertools import product
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Union
 
 try:
     from iktos.logger import getLogger
@@ -13,6 +13,18 @@ import numpy as np
 
 from . import constants
 from .Atom import Atom
+from .atom_typing import (
+    ChargedGroup,
+    HBondAcceptor,
+    HBondDonor,
+    HydrophobicAtom,
+    Metal,
+    MetalBinder,
+    PiCarbon,
+    Ring,
+    XBondAcceptor,
+    XBondDonor,
+)
 from .math_utils import (
     get_euclidean_distance_3d,
     get_vector,
@@ -30,8 +42,8 @@ class Hydrophobic(NamedTuple):
 
 
 def find_hydrophobics(
-    hydrophobics_rec: List,
-    hydrophobics_lig: List,
+    hydrophobics_rec: List[HydrophobicAtom],
+    hydrophobics_lig: List[HydrophobicAtom],
     distance_min: float,
     distance_max: float,
 ) -> List[Hydrophobic]:
@@ -67,8 +79,8 @@ class Pi_Stacking(NamedTuple):
 
 
 def find_pi_stackings(
-    groups_rec: List,
-    groups_lig: List,
+    groups_rec: List[Ring],
+    groups_lig: List[Ring],
     distance_min: float,
     distance_max_t: float,
     distance_max_f: float,
@@ -135,8 +147,8 @@ class Pi_Amide(NamedTuple):
 
 
 def find_pi_amides(
-    groups_rec: List,
-    groups_lig: List,
+    groups_rec: Union[List[Ring], List[PiCarbon]],
+    groups_lig: Union[List[Ring], List[PiCarbon]],
     distance_min: float,
     distance_max: float,
     offset_max: float,
@@ -197,8 +209,8 @@ class Pi_Cation(NamedTuple):
 
 
 def find_pi_cations(
-    rings: List,
-    charged_atoms: List,
+    rings: List[Ring],
+    charged_atoms: List[ChargedGroup],
     distance_min: float,
     distance_max: float,
     offset_max: float,
@@ -247,8 +259,8 @@ class Pi_Hydrophobic(NamedTuple):
 
 
 def find_pi_hydrophobics(
-    rings: List,
-    hydrophobics: List,
+    rings: List[Ring],
+    hydrophobics: List[HydrophobicAtom],
     distance_min: float,
     distance_max: float,
     offset_max: float,
@@ -300,8 +312,8 @@ class H_Bond(NamedTuple):
 
 
 def find_h_bonds(
-    acceptors: List,
-    donor_pairs: List,
+    acceptors: List[HBondAcceptor],
+    donor_pairs: List[HBondDonor],
     distance_min: float,
     distance_max: float,
     donor_angle_min: float,
@@ -352,17 +364,23 @@ def find_h_bonds(
         if not angle_ok:
             continue
         if donor_on_prot:
-            l, r = a, d
+            contact = H_Bond(
+                ligand=a.atom_list,
+                receptor=d.atom_list,
+                distance_ah=dist_ah,
+                distance_ad=dist_ad,
+                angle_dha=angle_dha,
+                type=d.type,
+            )
         else:
-            l, r = d, a
-        contact = H_Bond(
-            ligand=l.atom_list,
-            receptor=r.atom_list,
-            distance_ah=dist_ah,
-            distance_ad=dist_ad,
-            angle_dha=angle_dha,
-            type=d.type,
-        )
+            contact = H_Bond(
+                ligand=d.atom_list,
+                receptor=a.atom_list,
+                distance_ah=dist_ah,
+                distance_ad=dist_ad,
+                angle_dha=angle_dha,
+                type=d.type,
+            )
         pairings.append(contact)
     return pairings
 
@@ -375,8 +393,8 @@ class Halogen_Bond(NamedTuple):
 
 
 def find_x_bonds(
-    acceptors: List,
-    donor_pairs: List,
+    acceptors: List[XBondAcceptor],
+    donor_pairs: List[XBondDonor],
     distance_min: float,
     distance_max: float,
     donor_angle_min: float,
@@ -444,8 +462,8 @@ class Multipolar(NamedTuple):
 
 
 def find_multpipolar_interactions(
-    acceptors: List,
-    donor_pairs: List,
+    acceptors: List[PiCarbon],
+    donor_pairs: List[XBondDonor],
     distance_min: float,
     distance_max: float,
     donor_angle_min: float,
@@ -507,8 +525,8 @@ class Salt_Bridge(NamedTuple):
 
 
 def find_salt_bridges(
-    charged_atoms_rec: List,
-    charged_atoms_lig: List,
+    charged_atoms_rec: List[ChargedGroup],
+    charged_atoms_lig: List[ChargedGroup],
     distance_min: float,
     distance_max: float,
 ) -> List[Salt_Bridge]:
@@ -543,8 +561,8 @@ class Water_Bridge(NamedTuple):
 
 
 def find_water_bridges(
-    acceptors: List,
-    donor_pairs: List,
+    acceptors: List[HBondAcceptor],
+    donor_pairs: List[HBondDonor],
     waters: List,
     distance_min: float,
     distance_max: float,
@@ -614,18 +632,25 @@ def find_water_bridges(
                 )
                 continue
             if don_on_prot:
-                l, r = a, d
+                contact = Water_Bridge(
+                    ligand=a.atom_list,
+                    receptor=d.atom_list,
+                    water=w.atom_list,
+                    distance_aw=dist_aw,
+                    distance_dw=dist_dw,
+                    angle_dhw=angle_dhw,
+                    angle_awh=angle_awh,
+                )
             else:
-                l, r = d, a
-            contact = Water_Bridge(
-                ligand=l.atom_list,
-                receptor=r.atom_list,
-                water=w.atom_list,
-                distance_aw=dist_aw,
-                distance_dw=dist_dw,
-                angle_dhw=angle_dhw,
-                angle_awh=angle_awh,
-            )
+                contact = Water_Bridge(
+                    ligand=d.atom_list,
+                    receptor=a.atom_list,
+                    water=w.atom_list,
+                    distance_aw=dist_aw,
+                    distance_dw=dist_dw,
+                    angle_dhw=angle_dhw,
+                    angle_awh=angle_awh,
+                )
             pairings.append(contact)
     return pairings
 
@@ -642,11 +667,11 @@ class Metal_Complex(NamedTuple):
 
 
 def find_metal_complexes(  # noqa: C901
-    metals_rec: List,
-    metal_binders_rec: List,
-    metals_lig: List,
-    metal_binders_lig: List,
-    metal_binders_wat: List,
+    metals_rec: List[Metal],
+    metal_binders_rec: List[MetalBinder],
+    metals_lig: List[Metal],
+    metal_binders_lig: List[MetalBinder],
+    metal_binders_wat: List[MetalBinder],
     distance_max: float,
 ) -> List[Metal_Complex]:
     """Detects metal-atom interactions between any metal (ligand or receptor side)
