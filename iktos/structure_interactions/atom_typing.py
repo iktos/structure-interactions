@@ -124,7 +124,9 @@ def find_hydrophobics(obatoms: List[OBAtom]) -> List[HydrophobicAtom]:
     )
     for obatom in obatoms_filtered:
         if obatom.GetAtomicNum() == 16 and obatom.GetHyb() != 3:
-            logger.debug(f'Excluding S{obatom.GetId()} from list of hydrophobics')
+            logger.debug(
+                f'Excluding S{obatom.GetId()} from list of hydrophobics (not SP3)'
+            )
             continue
         selection.append(HydrophobicAtom(atom_list=[Atom(obatom)]))
     logger.debug(f'Found {len(selection)} hydrophobic atoms')
