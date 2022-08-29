@@ -5,7 +5,7 @@ try:
 except ImportError:
     from logging import getLogger
 
-from .mol_utils import get_atom_name, get_coords
+from .mol_utils import get_atom_name, get_atom_coordinates
 
 logger = getLogger(__name__)
 
@@ -50,4 +50,4 @@ class Atom:
             self.residue_chain = obatom.GetResidue().GetChain()
         self.residue_id = f'{self.residue_name}|{self.residue_chain}|{self.residue_num}'
         self.unique_id = f'{self.mol_title}|{self.residue_id}|{self.atom_id}'
-        self.coords = get_coords(obatom)
+        self.coords = get_atom_coordinates(obatom)

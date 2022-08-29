@@ -667,12 +667,9 @@ class Metal_Complex(NamedTuple):
 
 
 def find_metal_complexes(  # noqa: C901
-    metals_rec: List[Metal],
-    metal_binders_rec: List[MetalBinder],
-    metals_lig: List[Metal],
-    metal_binders_lig: List[MetalBinder],
-    metal_binders_wat: List[MetalBinder],
-    distance_max: float,
+    metals: List[Metal],
+    metal_binders: List[MetalBinder],
+    distance_max: float = 3.0,
 ) -> List[Metal_Complex]:
     """Detects metal-atom interactions between any metal (ligand or receptor side)
     and any appropriate group (ligand or receptor side), as well as water.
@@ -686,9 +683,6 @@ def find_metal_complexes(  # noqa: C901
     """
 
     pairings = []
-    metals = metals_lig + metals_rec
-    metal_binders = metal_binders_lig + metal_binders_rec + metal_binders_wat
-
     pairings_dict = {}  # type: dict
     for m, b in product(metals, metal_binders):
         dist = get_euclidean_distance_3d(m.atom_list[0].coords, b.atom_list[0].coords)

@@ -25,11 +25,14 @@ def get_euclidean_distance_3d(v1, v2):
 
 
 def get_vector(p1, p2):
-    """
-    Calculate vector from p1 to p2
-    p1: coordinates of point p1
-    p2: coordinates of point p2
-    Return numpy array with vector coordinates
+    """Calculate vector from p1 to p2.
+
+    Args:
+        p1: coordinates of point p1.
+        p2: coordinates of point p2.
+
+    Returns:
+        Numpy array with vector coordinates.
     """
     if not (len(p1) == 3 and len(p2) == 3):
         logger.error(f'Invalid vector format: {p1}, {p2}')
@@ -42,12 +45,18 @@ def get_vector(p1, p2):
 
 
 def get_vector_angle(v1, v2, deg=True):
-    """
-    Calculate the angle between two vectors
-    v1: coordinates of vector v1
-    v2: coordinates of vector v2
-    Return angle in degree (range 0-180) or rad
-    Note: round value to prevent floating point errors
+    """Calculate the angle between two vectors.
+
+    Note:
+        Round value to prevent floating point errors.
+
+    Args:
+        v1: coordinates of vector v1.
+        v2: coordinates of vector v2.
+        deg: Whether convert angles from radians to degrees (default True).
+
+    Returns:
+        Angle in degree (range 0-180) or rad.
     """
     if np.array_equal(v1, v2):
         return 0.0

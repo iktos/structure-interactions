@@ -10,6 +10,7 @@ except ImportError:
     from logging import getLogger
 
 import numpy as np
+import numpy.typing as npt
 
 try:
     from openbabel.openbabel import (  # openbabel 3
@@ -38,6 +39,7 @@ except ModuleNotFoundError:
 from . import constants
 from .math_utils import get_vector, get_vector_angle
 
+
 logger = getLogger(__name__)
 
 
@@ -63,8 +65,14 @@ def map_atom_ids(obmol, mapping):
     return obmol
 
 
-def get_coords(obatom):
+def get_atom_coordinates(obatom: OBAtom) -> npt.NDArray:
+    """Returns the coordinates of an atom."""
     return np.array([obatom.GetX(), obatom.GetY(), obatom.GetZ()])
+
+
+def get_all_coordinates(obmol: OBMol) -> npt.NDArray:
+    """Returns the coordinates of all the atoms of a molecule."""
+    return np.array([(a.GetX(), a.GetY(), a.GetZ()) for a in OBMolAtomIter(obmol)])
 
 
 def get_o_neighbours(obatom: OBAtom) -> List[OBAtom]:
@@ -86,11 +94,13 @@ def ring_is_planar(ring, r_atoms):
     for a in r_atoms:
         obneighs = OBAtomAtomIter(a)
         n_coords = [
-            get_coords(obneigh) for obneigh in obneighs if ring.IsMember(obneigh)
+            get_atom_coordinates(obneigh)
+            for obneigh in obneighs
+            if ring.IsMember(obneigh)
         ]
         vec1, vec2 = (
-            get_vector(get_coords(a), n_coords[0]),
-            get_vector(get_coords(a), n_coords[1]),
+            get_vector(get_atom_coordinates(a), n_coords[0]),
+            get_vector(get_atom_coordinates(a), n_coords[1]),
         )
         normals.append(np.cross(vec1, vec2))
     # Given all normals of ring atoms and their neighbours,

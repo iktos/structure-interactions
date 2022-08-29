@@ -8,7 +8,9 @@ except ImportError:
 try:
     from openbabel.openbabel import OBMolAtomIter  # openbabel 3
 except ModuleNotFoundError:
-    from openbabel import OBMolAtomIter  # openbabel 2 (warning in structure-utils)
+    from openbabel import (
+        OBMolAtomIter,
+    )  # openbabel 2 (warning in structure-utils)
 
 from .atom_typing import (
     find_charged_atoms,
@@ -16,14 +18,14 @@ from .atom_typing import (
     find_h_bond_donors,
     find_halogens,
     find_hydrophobics,
-    find_metals,
     find_metal_binders,
+    find_metals,
     find_pi_carbons,
     find_rings,
     find_x_bond_acceptors,
 )
-from .math_utils import get_centroid, get_euclidean_distance_3d
-from .mol_utils import get_coords
+from .mol_utils import get_all_coordinates, map_atom_ids, read_obmol
+
 
 logger = getLogger(__name__)
 
@@ -31,48 +33,37 @@ logger = getLogger(__name__)
 class Ligand:
     """Class to store ligand atoms and their properties"""
 
-    def __init__(self, obmol_lig):
-        super().__init__()
+    def __init__(self, lig_coords: str, lig_format: str, as_string: bool):
+        if lig_format != 'sdf':
+            logger.warning(
+                'It is recommended to use SDF blocks/files for the ligand; '
+                'for other formats, make sure that formal (not partial) atomic charges '
+                'are explicitely defined (otherwise negative charges like C(=O)[O-] '
+                'will be missed)'
+            )
 
-        self.obmol = obmol_lig
-        self.atoms = [a for a in OBMolAtomIter(self.obmol)]
-        logger.debug(f'Found {len(self.atoms)} atoms in ligand')
-
-        # Find rings
-        self.rings = find_rings(obmol_lig)
-        self.num_rings = len(self.rings)
-
-    def identify_functional_groups(self):
-        logger.debug('Identifying functional groups in ligand')
-
-        # Find hydrophobic atoms
-        self.hydrophobics = find_hydrophobics(self.atoms)
-
-        # Find H-bond donors and acceptors
-        self.h_bond_acceptors = find_h_bond_acceptors(self.atoms)
-        self.h_bond_donors = find_h_bond_donors(self.atoms)
-
-        # Find charged atoms
-        self.charged_atoms = find_charged_atoms(self.atoms)
-
-        # Find metals and metal binders (atoms with lone pair)
-        self.metals = find_metals(self.atoms, 'ligand')
-        self.metal_binders = find_metal_binders(self.atoms, 'ligand')
-
-        # Find halogens
-        self.halogens = find_halogens(self.atoms)
-
-        # Find halogen-bond acceptors
-        self.x_bond_acceptors = find_x_bond_acceptors(self.atoms)
-
-        # Find pi-groups (for pi-stacking + multipolar interactions with F)
-        self.pi_carbons = find_pi_carbons(self.atoms)
-
-        # Define centroid for identification of binding site
-        self.centroid = get_centroid([get_coords(a) for a in self.atoms])
-        self.max_dist_to_center = max(
-            [
-                get_euclidean_distance_3d(self.centroid, get_coords(a))
-                for a in self.atoms
-            ]
+        # Read and parse ligand file/string
+        obmol = read_obmol(
+            lig_coords, fmt=lig_format, title='ligand', as_string=as_string
         )
+
+        # Map atom Id to their Idx value (1-based, needed by Pymol)
+        self.obmol = map_atom_ids(obmol, None)
+
+        # Store some info as public attributes
+        self.coordinates = get_all_coordinates(self.obmol)
+        logger.debug(f'Found {self.obmol.NumAtoms()} atoms in ligand')
+
+        # Detect functional groups
+        atoms = [a for a in OBMolAtomIter(self.obmol)]
+        self.rings = find_rings(obmol)
+        self.num_rings = len(self.rings)
+        self.hydrophobics = find_hydrophobics(atoms)
+        self.h_bond_acceptors = find_h_bond_acceptors(atoms)
+        self.h_bond_donors = find_h_bond_donors(atoms)
+        self.charged_atoms = find_charged_atoms(atoms)
+        self.metals = find_metals(atoms, 'ligand')
+        self.metal_binders = find_metal_binders(atoms, 'ligand')
+        self.halogens = find_halogens(atoms)
+        self.x_bond_acceptors = find_x_bond_acceptors(atoms)
+        self.pi_carbons = find_pi_carbons(atoms)

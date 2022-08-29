@@ -5,14 +5,11 @@ Proprietary and confidential
 """
 
 from iktos.structure_interactions.Ligand import Ligand
-from iktos.structure_interactions.mol_utils import read_obmol
 
 
 def test_identify_functional_groups_5N9T():
     file = 'tests/data/lig_5N9T.sdf'
-    obmol = read_obmol(file, as_string=False, fmt='sdf', title='ligand')
-    ligand = Ligand(obmol)
-    ligand.identify_functional_groups()
+    ligand = Ligand(file, 'sdf', as_string=False)
     assert len(ligand.rings) == 4
     assert len(ligand.hydrophobics) == 19
     assert len(ligand.h_bond_acceptors) == 5
@@ -27,9 +24,7 @@ def test_identify_functional_groups_5N9T():
 
 def test_identify_functional_groups_3S3M():
     file = 'tests/data/lig_3S3M.sdf'
-    obmol = read_obmol(file, as_string=False, fmt='sdf', title='ligand')
-    ligand = Ligand(obmol)
-    ligand.identify_functional_groups()
+    ligand = Ligand(file, 'sdf', as_string=False)
     assert len(ligand.rings) == 2
     assert len(ligand.hydrophobics) == 9
     assert len(ligand.h_bond_acceptors) == 5
@@ -48,9 +43,7 @@ def test_identify_functional_groups_old_bug():
     # New strategy: 'read_mol' does not try to create a residue if there is none,
     # the rest of the code is made to handle with/without residue on the ligand side
     file = 'tests/data/ligand_bug_residue.sdf'
-    obmol = read_obmol(file, as_string=False, fmt='sdf', title='ligand')
-    ligand = Ligand(obmol)
-    ligand.identify_functional_groups()
+    ligand = Ligand(file, 'sdf', as_string=False)
     assert len(ligand.rings) == 1
     assert len(ligand.hydrophobics) == 4
     assert len(ligand.h_bond_acceptors) == 4

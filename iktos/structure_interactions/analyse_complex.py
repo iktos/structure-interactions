@@ -2,6 +2,8 @@ from typing import List, Sequence
 
 from .InteractionParameters import InteractionParameters
 from .InteractionProfiler import InteractionProfiler
+from .Ligand import Ligand
+from .Receptor import Receptor
 
 
 def analyse_complex(
@@ -34,15 +36,20 @@ def analyse_complex(
         ValueError: if one of the input coords block or file is invalid
             (i.e. obmol is None or number of atoms or bonds == 0).
     """
-    plip = InteractionProfiler()
-    plip.load_receptor(rec_coords, as_string=as_string)
-    plip.load_ligand(
-        lig_coords,
-        lig_format=lig_format,
-        as_string=as_string,
-        bs_dist=parameters.bs_dist,
-    )
-    return plip.analyse_interactions(refine=refine, parameters=parameters)
+    # Load ligand
+    ligand = Ligand(lig_coords, lig_format, as_string=as_string)
+
+    # Load receptor and use the ligand to define the binding site
+    receptor = Receptor(rec_coords, as_string=as_string)
+    receptor.detect_binding_site([ligand], parameters.bs_dist)
+    receptor.identify_functional_groups()
+
+    # Init interaction profiler
+    plip = InteractionProfiler(receptor, ligand, parameters)
+    if refine:
+        plip.detect_intermolecular_interactions()
+        return plip.refine_intermolecular_interactions()
+    return plip.detect_intermolecular_interactions()
 
 
 def analyse_complexes(
@@ -76,15 +83,22 @@ def analyse_complexes(
         ValueError: if one of the input coords block or file is invalid
             (i.e. obmol is None or number of atoms or bonds == 0).
     """
-    plip = InteractionProfiler()
-    plip.load_receptor(rec_coords, as_string=as_string)
+    # Load all the ligands
+    ligands = [Ligand(coords, lig_format, as_string=as_string) for coords in lig_coords]
+
+    # Load receptor and use the ligands to define the binding site
+    receptor = Receptor(rec_coords, as_string=as_string)
+    receptor.detect_binding_site(ligands, parameters.bs_dist)
+    receptor.identify_functional_groups()
+
+    # Init interaction profiler
     contacts = []  # type: List
-    for lig in lig_coords:
-        plip.load_ligand(
-            lig,
-            lig_format=lig_format,
-            as_string=as_string,
-            bs_dist=parameters.bs_dist,
-        )
-        contacts.append(plip.analyse_interactions(refine=refine, parameters=parameters))
+    for ligand in ligands:
+        plip = InteractionProfiler(receptor, ligand, parameters)
+        if refine:
+            plip.detect_intermolecular_interactions()
+            interactions = plip.refine_intermolecular_interactions()
+        else:
+            interactions = plip.detect_intermolecular_interactions()
+        contacts.append(interactions)
     return contacts

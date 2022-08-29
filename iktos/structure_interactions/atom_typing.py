@@ -31,7 +31,7 @@ from .Atom import Atom
 from .math_utils import get_centroid, get_vector, normalize_vector
 from .mol_utils import (
     atom_has_lone_pair,
-    get_coords,
+    get_atom_coordinates,
     get_h_neighbours,
     get_n_neighbours,
     get_o_neighbours,
@@ -86,11 +86,11 @@ def find_rings(obmol: OBMol) -> List[Ring]:
             for a in ring_atoms:
                 a.SetAromatic()
             atoms = [Atom(a) for a in ring_atoms]
-            coords = [get_coords(ring_atoms[i]) for i in [0, 2, 4]]
+            coords = [get_atom_coordinates(ring_atoms[i]) for i in [0, 2, 4]]
             ringv1 = get_vector(coords[0], coords[1])
             ringv2 = get_vector(coords[2], coords[0])
             normal = normalize_vector(np.cross(ringv1, ringv2))
-            center = get_centroid([get_coords(ra) for ra in ring_atoms])
+            center = get_centroid([get_atom_coordinates(ra) for ra in ring_atoms])
             selection.append(Ring(atom_list=atoms, normal=normal, center=center))
     logger.debug(f'Found {len(selection)} aromatic ring(s)')
     return selection
@@ -305,11 +305,11 @@ def find_pi_carbons(obatoms: List[OBAtom]) -> List[PiCarbon]:
         obneighs_n = get_n_neighbours(obatom)
         obneighs_o = get_o_neighbours(obatom)
         if len(obneighs_n) + len(obneighs_o) >= 2 and len(obneighs_n) > 0:
-            coords = [get_coords(a) for a in obneighs]
+            coords = [get_atom_coordinates(a) for a in obneighs]
             v1 = get_vector(coords[0], coords[1])
             v2 = get_vector(coords[2], coords[0])
             normal = normalize_vector(np.cross(v1, v2))
-            center = get_coords(obatom)
+            center = get_atom_coordinates(obatom)
             selection.append(
                 PiCarbon(
                     atom_list=[Atom(obatom)],
@@ -422,7 +422,7 @@ def find_charged_atoms(obatoms: List[OBAtom]) -> List[ChargedGroup]:
         elif obatom.GetFormalCharge() != 0:
             fgroup, charge, obatms = identify_charged_group(obatom)
         if charge in ['positive', 'negative']:
-            centroid = get_centroid([get_coords(a) for a in obatms])
+            centroid = get_centroid([get_atom_coordinates(a) for a in obatms])
             atoms = [Atom(a) for a in obatms]
             selection.append(
                 ChargedGroup(
