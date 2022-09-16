@@ -24,4 +24,6 @@ test_poetry:
       - coverage.xml
     reports:
       junit: junit.xml
-      cobertura: coverage.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml

@@ -7,7 +7,7 @@ packages = [
   {include = "iktos/**/*.py"},
 ]
 readme = "README.md"
-version = "0.4.2"
+version = "0.4.3"
 
 [[tool.poetry.source]]
 name = "iktos"
@@ -16,7 +16,7 @@ url = "https://pypi.golgoth.iktos.ai/simple"
 
 [tool.poetry.dependencies]
 coverage = "*"
-python = "~3.7.1"
+python = "^3.7.1"
 scikit-learn = "0.22"
 
 [tool.mypy]
