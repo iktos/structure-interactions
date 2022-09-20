@@ -242,7 +242,7 @@ def refine_water_bridges(
     """Refines water bridges to avoid double counts.
 
     If a water bridge involves a water also involved in a metal complex, this function
-    will drop it ( this is because water molecules coordinated to metals tend to form
+    will drop it (this is because water molecules coordinated to metals tend to form
     lots of water bridges and H-bonds just because they are close, but angles can be unrealistic).
     """
     filter_out = []

@@ -14,26 +14,6 @@
 from typing import Any, Dict, List
 
 AROMATIC_PLANARITY = 5.0  # max allowed deviation from planarity in aromatic rings
-# Coordination numbers and geometries for metal complexes detection
-METAL_COMPLEX_COO = {
-    2: ['linear'],
-    3: ['trigonal.planar', 'trigonal.pyramidal'],
-    4: ['tetrahedral', 'square.planar'],
-    5: ['trigonal.bipyramidal', 'square.pyramidal'],
-    6: ['octahedral'],
-}
-
-# Angle signatures for each geometry (as seen from each target atom)
-METAL_COMPLEX_ANG = {
-    'linear': [[180.0]] * 2,
-    'trigonal.planar': [[120.0, 120.0]] * 3,
-    'trigonal.pyramidal': [[109.5, 109.5]] * 3,
-    'tetrahedral': [[109.5, 109.5, 109.5, 109.5]] * 4,
-    'square.planar': [[90.0, 90.0, 90.0, 90.0]] * 4,
-    'trigonal.bipyramidal': [[120.0, 120.0, 90.0, 90.0]] * 3 + [[90.0, 90.0, 90.0, 180.0]] * 2,
-    'square.pyramidal': [[90.0, 90.0, 90.0, 180.0]] * 4 + [[90.0, 90.0, 90.0, 90.0]],
-    'octahedral': [[90.0, 90.0, 90.0, 90.0, 180.0]] * 6,
-}
 
 # Metal cations
 METAL_IONS = [

@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from collections import defaultdict
 from itertools import product
 from typing import List, NamedTuple, Union
 
@@ -9,9 +8,6 @@ try:
 except ImportError:
     from logging import getLogger
 
-import numpy as np
-
-from . import constants
 from .Atom import Atom
 from .atom_typing import (
     ChargedGroup,
@@ -659,14 +655,11 @@ class Metal_Complex(NamedTuple):
     metal: List[Atom]
     ligand: List[Atom]
     receptor: List[Atom]
-    coordination_num: int
-    rms: float
-    geometry: str
     num_partners: int
     complex_num: int
 
 
-def find_metal_complexes(  # noqa: C901
+def find_metal_complexes(
     metals: List[Metal],
     metal_binders: List[MetalBinder],
     distance_max: float = 3.0,
@@ -676,193 +669,66 @@ def find_metal_complexes(  # noqa: C901
 
     Definition: set of L/R--M pairs within distance_max and with a predefined geometry
 
+    Warnings:
+        Ignores complexes where the metal is not connected to any ligand atom
+            or any receptor atom.
+
+    Args:
+        metals: list of metal atoms.
+        metal_binders: list of metal binders.
+        distance_max: all binders within that distance will be considered as bound to the metal
+            (default: 3. Ang).
+
     Returns:
-        1 set per detected complex, with M / L / R atoms in separate lists
-
-    TODO: refacto
+        list of Metal_Complex with M / L / R atoms in separate lists.
     """
-
     pairings = []
     pairings_dict = {}  # type: dict
-    for m, b in product(metals, metal_binders):
-        dist = get_euclidean_distance_3d(m.atom_list[0].coords, b.atom_list[0].coords)
+    for metal, binder in product(metals, metal_binders):
+        dist = get_euclidean_distance_3d(
+            metal.atom_list[0].coords,
+            binder.atom_list[0].coords,
+        )
         if not dist <= distance_max:
             continue
-        m_id = m.atom_list[0].unique_id
-        if m_id not in pairings_dict:
-            pairings_dict[m_id] = []
-        pairings_dict[m_id].append((m, b, dist))
+        metal_id = metal.atom_list[0].unique_id
+        if metal_id not in pairings_dict:
+            pairings_dict[metal_id] = []
+        pairings_dict[metal_id].append((metal, binder))
 
-    for cnum, m_id in enumerate(pairings_dict):
-        logger.debug(f'Looking at metal complex {cnum + 1}')
-        rms = 0.0
-        excluded = []  # type: list
-        contact_pairs = pairings_dict[m_id]
+    for i, (metal_id, contact_pairs) in enumerate(pairings_dict.items()):
+        logger.debug(f'Looking at metal: {metal_id}')
 
-        # Cannot specify geometry if only one binder
-        num_binders = len(contact_pairs)
-        if num_binders == 1:
-            final_geom = 'NA'
-            final_coo = 1
-            excluded = []
-            rms = 0.0
-
-        vectors_dict = defaultdict(list)
-        for contact_pair in contact_pairs:
-            m, b, dist = contact_pair
-            b_idx = b.atom_list[0].unique_id
-            vectors_dict[b_idx].append(
-                get_vector(m.atom_list[0].coords, b.atom_list[0].coords)
+        # If the list of binders doesn't include receptor and ligand, discard
+        locations = set([x[1].location for x in contact_pairs])
+        if 'ligand' not in locations:
+            logger.warning(
+                f'--> ignoring metal {metal_id} because it is not connected to the ligand'
             )
-
-        angles_dict = {}
-        for b_idx in vectors_dict:
-            cur_vector = vectors_dict[b_idx]
-            other_vectors = []
-            for t in vectors_dict:
-                if not t == b_idx:
-                    [other_vectors.append(x) for x in vectors_dict[t]]  # type: ignore
-            angles = [
-                get_vector_angle(pair[0], pair[1])
-                for pair in product(cur_vector, other_vectors)
-            ]
-            angles_dict[b_idx] = angles
-
-        # Record fit information for each geometry tested
-        all_total = []
-
-        class gdata(NamedTuple):
-            geometry: str
-            rms: float
-            coordination: int
-            excluded: List
-            diff_binders: int
-
-        if num_binders > 1:
-            # Start with highest coordination number and loop over
-            # possible coordination numbers; score each combination
-            for coo in sorted(constants.METAL_COMPLEX_COO, reverse=True):
-                geometries = constants.METAL_COMPLEX_COO[coo]
-                for geometry in geometries:
-
-                    # Set ideal angles for geometry, from each perspective
-                    signature = constants.METAL_COMPLEX_ANG[geometry]
-                    geometry_total = 0
-                    geometry_scores = []  # all scores for 1 geom
-                    used_up_binders = []
-                    not_used = []
-
-                    # How many more observed binders are there?
-                    coo_diff = num_binders - coo
-
-                    # Find best match for each subsignature
-                    for subsignature in signature:
-                        # Ideal angles from one perspective
-                        best_binder = None
-                        # There's one best-matching binder for each subsignature
-                        best_score = 999.0
-                        for k, b_idx in enumerate(angles_dict):
-                            if b_idx not in used_up_binders:
-                                # Observed angles from perspective of 1 binder
-                                observed_angles = angles_dict[b_idx]
-                                single_binder_scores = []
-                                used_up_observed_angles = []
-                                for i, ideal_angle in enumerate(subsignature):
-                                    # For each angle in the signature,
-                                    # find the best-matching observed angle
-                                    best_match = None
-                                    best_match_diff = 999
-                                    for j, observed_angle in enumerate(observed_angles):
-                                        if j not in used_up_observed_angles:
-                                            diff = abs(ideal_angle - observed_angle)
-                                            if diff < best_match_diff:
-                                                best_match_diff = diff
-                                                best_match = j
-                                    if best_match is not None:
-                                        used_up_observed_angles.append(best_match)
-                                        single_binder_scores.append(best_match_diff)
-                                # Calculate RMS for binder angles
-                                score = (
-                                    sum([x**2 for x in single_binder_scores]) ** 0.5
-                                )
-                                if score < best_score:
-                                    best_score = score
-                                    best_binder = b_idx
-                        used_up_binders.append(best_binder)
-                        geometry_scores.append(best_score)
-                        # Total score = mean of RMS values
-                        geometry_total = np.mean(geometry_scores)
-                    # Record binders not used for excluding
-                    # them when deciding for a final geometry
-                    [
-                        not_used.append(b_id)  # type: ignore
-                        for b_id in angles_dict
-                        if b_id not in used_up_binders
-                    ]
-                    all_total.append(
-                        gdata(
-                            geometry=geometry,
-                            rms=geometry_total,
-                            coordination=coo,
-                            excluded=not_used,
-                            diff_binders=coo_diff,
-                        )
-                    )
-            # Choose the complex geometry that best fits the contacts observed
-            # Start with the geometry closer to ideal (num of partners close
-            # to num of ideal partners), then check that the next
-            # best solution is not too close in RMS (diff > 0.5)
-            all_total = sorted(all_total, key=lambda x: abs(x.diff_binders))
-            for i, total in enumerate(all_total):
-                next_total = all_total[i + 1]
-                this_rms, next_rms = total.rms, next_total.rms
-                diff_to_next = next_rms - this_rms
-                if diff_to_next > 0.5:
-                    final_geom = total.geometry
-                    final_coo = total.coordination
-                    rms = total.rms
-                    excluded = total.excluded
-                    break
-                elif next_total.rms < 3.5:
-                    final_geom = next_total.geometry
-                    final_coo = next_total.coordination
-                    rms = next_total.rms
-                    excluded = next_total.excluded
-                    break
-                elif i == len(all_total) - 2:
-                    final_geom, final_coo = 'NA', 'NA'  # type: ignore
-                    rms, excluded = float('nan'), []
-                    break
-
-        # Ignore complex if metal binded to water/receptor only
-        if set([x[1].location for x in contact_pairs]) == {'water', 'receptor'}:
             continue
-        logger.debug(
-            f'--> metal ion {m_id} complexed with {final_geom} geometry '
-            f'(coordination number {final_coo}/{num_binders} observed)'
-        )
+        elif 'receptor' not in locations:
+            logger.warning(
+                f'--> ignoring metal {metal_id} because it is not connected to the receptor'
+            )
+            continue
 
-        # Save data for complex
-        receptor_binders = []
-        ligand_binders = []
-        for contact_pair in contact_pairs:
-            m, b, dist = contact_pair
-            b_id = b.atom_list[0].unique_id
-            if b_id in excluded:
-                continue
-            if b.location != 'ligand':
-                receptor_binders.append(b.atom_list[0])
+        # Save data
+        num_binders = len(contact_pairs)
+        logger.debug(
+            f'--> metal ion {metal_id} complexed by {num_binders} metal binders'
+        )
+        receptor_binders, ligand_binders = [], []
+        for metal, binder in contact_pairs:
+            if binder.location != 'ligand':
+                receptor_binders.append(binder.atom_list[0])
             else:
-                ligand_binders.append(b.atom_list[0])
+                ligand_binders.append(binder.atom_list[0])
         contact = Metal_Complex(
-            metal=m.atom_list,
+            metal=metal.atom_list,
             ligand=ligand_binders,
             receptor=receptor_binders,
-            coordination_num=final_coo,
-            rms=rms,
             num_partners=num_binders,
-            complex_num=cnum + 1,
-            geometry=final_geom,
+            complex_num=i + 1,
         )
         pairings.append(contact)
     return pairings

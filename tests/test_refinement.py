@@ -358,9 +358,6 @@ def test_refine_water_bridges_1():
         ligand=[Atom(unique_id='ligand|UNL|A|1|1')],
         receptor=[Atom(unique_id='receptor|SOL|A|7|OW')],
         metal=[],  # not used
-        coordination_num=0,  # not used
-        rms=0.,  # not used
-        geometry='',  # not used
         num_partners=0,  # not used
         complex_num=0,  # not used
     )
