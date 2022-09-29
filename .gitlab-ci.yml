@@ -11,8 +11,8 @@ include:
   tags:
     - python-structure-based
 
-test_poetry:
-  extends: .test_poetry
+test:
+  extends: .test_stage
   script:
     - poetry config --local virtualenvs.in-project true
     - poetry run task test
