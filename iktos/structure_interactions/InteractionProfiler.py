@@ -78,156 +78,148 @@ class InteractionProfiler:
         """
         logger.debug('Analysing interactions')
         self.hydrophobics_all = find_hydrophobics(
-            self.rec.hydrophobics,
-            self.lig.hydrophobics,
-            self.parameters.min_dist,
-            self.parameters.hydrophobic_dist_max,
+            hydrophobics_1=self.rec.hydrophobics,
+            hydrophobics_2=self.lig.hydrophobics,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.hydrophobic_dist_max,
         )
         logger.debug(f'Found {len(self.hydrophobics_all)} hydrophobic interaction(s)')
 
         self.pi_stackings_all = find_pi_stackings(
-            self.rec.rings,
-            self.lig.rings,
-            self.parameters.min_dist,
-            self.parameters.pistacking_dist_max_t,
-            self.parameters.pistacking_dist_max_f,
-            self.parameters.pistacking_dist_max_p,
-            self.parameters.pistacking_ang_dev,
-            self.parameters.pistacking_offset_max,
+            rings_1=self.rec.rings,
+            rings_2=self.lig.rings,
+            distance_min=self.parameters.min_dist,
+            distance_max_t=self.parameters.pistacking_dist_max_t,
+            distance_max_f=self.parameters.pistacking_dist_max_f,
+            distance_max_p=self.parameters.pistacking_dist_max_p,
+            angle_dev=self.parameters.pistacking_ang_dev,
+            offset_max=self.parameters.pistacking_offset_max,
         )
         logger.debug(f'Found {len(self.pi_stackings_all)} pi-stacking interaction(s)')
 
         self.pi_amides_all = find_pi_amides(
-            self.rec.pi_carbons,
-            self.lig.rings,
-            self.parameters.min_dist,
-            self.parameters.piother_dist_max,
-            self.parameters.piother_offset_max,
-            self.parameters.pistacking_ang_dev,
+            rings=self.lig.rings,
+            pi_carbons=self.rec.pi_carbons,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.piother_dist_max,
+            offset_max=self.parameters.piother_offset_max,
+            angle_dev=self.parameters.pistacking_ang_dev,
         ) + find_pi_amides(
-            self.rec.rings,
-            self.lig.pi_carbons,
-            self.parameters.min_dist,
-            self.parameters.piother_dist_max,
-            self.parameters.piother_offset_max,
-            self.parameters.pistacking_ang_dev,
+            rings=self.rec.rings,
+            pi_carbons=self.lig.pi_carbons,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.piother_dist_max,
+            offset_max=self.parameters.piother_offset_max,
+            angle_dev=self.parameters.pistacking_ang_dev,
         )
         logger.debug(f'Found {len(self.pi_amides_all)} pi-amide like interaction(s)')
 
         self.pi_cations_all = find_pi_cations(
-            self.rec.rings,
-            self.lig.charged_atoms,
-            self.parameters.min_dist,
-            self.parameters.piother_dist_max,
-            self.parameters.piother_offset_max,
-            True,
+            rings=self.rec.rings,
+            charged_atoms=self.lig.charged_atoms,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.piother_dist_max,
+            offset_max=self.parameters.piother_offset_max,
         ) + find_pi_cations(
-            self.lig.rings,
-            self.rec.charged_atoms,
-            self.parameters.min_dist,
-            self.parameters.piother_dist_max,
-            self.parameters.piother_offset_max,
-            False,
+            rings=self.lig.rings,
+            charged_atoms=self.rec.charged_atoms,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.piother_dist_max,
+            offset_max=self.parameters.piother_offset_max,
         )
         logger.debug(f'Found {len(self.pi_cations_all)} pi-cation interaction(s)')
 
         self.pi_hydrophobics_all = find_pi_hydrophobics(
-            self.rec.rings,
-            self.lig.hydrophobics,
-            self.parameters.min_dist,
-            self.parameters.piother_dist_max,
-            self.parameters.piother_offset_max,
-            True,
+            rings=self.rec.rings,
+            hydrophobics=self.lig.hydrophobics,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.piother_dist_max,
+            offset_max=self.parameters.piother_offset_max,
         ) + find_pi_hydrophobics(
-            self.lig.rings,
-            self.rec.hydrophobics,
-            self.parameters.min_dist,
-            self.parameters.piother_dist_max,
-            self.parameters.piother_offset_max,
-            False,
+            rings=self.lig.rings,
+            hydrophobics=self.rec.hydrophobics,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.piother_dist_max,
+            offset_max=self.parameters.piother_offset_max,
         )
         logger.debug(
             f'Found {len(self.pi_hydrophobics_all)} pi-hydrophobic interaction(s)'
         )
 
         self.h_bonds_all = find_h_bonds(
-            self.rec.h_bond_acceptors + self.rec.water_h_bond_acceptors,
-            self.lig.h_bond_donors,
-            self.parameters.min_dist,
-            self.parameters.hbond_dist_max,
-            self.parameters.hbond_don_angle_min,
-            self.parameters.hbond_acc_angle_min,
-            False,
+            acceptors=self.rec.h_bond_acceptors + self.rec.water_h_bond_acceptors,
+            donor_pairs=self.lig.h_bond_donors,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.hbond_dist_max,
+            donor_angle_min=self.parameters.hbond_don_angle_min,
+            acceptor_angle_min=self.parameters.hbond_acc_angle_min,
         ) + find_h_bonds(
-            self.lig.h_bond_acceptors,
-            self.rec.h_bond_donors + self.rec.water_h_bond_donors,
-            self.parameters.min_dist,
-            self.parameters.hbond_dist_max,
-            self.parameters.hbond_don_angle_min,
-            self.parameters.hbond_acc_angle_min,
-            True,
+            acceptors=self.lig.h_bond_acceptors,
+            donor_pairs=self.rec.h_bond_donors + self.rec.water_h_bond_donors,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.hbond_dist_max,
+            donor_angle_min=self.parameters.hbond_don_angle_min,
+            acceptor_angle_min=self.parameters.hbond_acc_angle_min,
         )
         logger.debug(f'Found {len(self.h_bonds_all)} H-bond(s)')
 
         self.x_bonds_all = find_x_bonds(
-            self.rec.x_bond_acceptors + self.rec.water_x_bond_acceptors,
-            self.lig.halogens,
-            self.parameters.min_dist,
-            self.parameters.xbond_dist_max,
-            self.parameters.xbond_don_angle_min,
-            self.parameters.xbond_acc_angle_min,
+            acceptors=self.rec.x_bond_acceptors + self.rec.water_x_bond_acceptors,
+            donor_pairs=self.lig.halogens,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.xbond_dist_max,
+            donor_angle_min=self.parameters.xbond_don_angle_min,
+            acceptor_angle_min=self.parameters.xbond_acc_angle_min,
         )
         logger.debug(f'Found {len(self.x_bonds_all)} halogen bond(s)')
 
         self.mulipolar_all = find_multpipolar_interactions(
-            self.rec.pi_carbons,
-            self.lig.halogens,
-            self.parameters.min_dist,
-            self.parameters.multipolar_dist_max,
-            self.parameters.multipolar_don_angle_min,
-            self.parameters.multipolar_norm_angle_max,
+            acceptors=self.rec.pi_carbons,
+            donor_pairs=self.lig.halogens,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.multipolar_dist_max,
+            donor_angle_min=self.parameters.multipolar_don_angle_min,
+            norm_angle_max=self.parameters.multipolar_norm_angle_max,
         )
         logger.debug(f'Found {len(self.mulipolar_all)} multipolar interaction(s)')
 
         self.salt_bridges_all = find_salt_bridges(
-            self.rec.charged_atoms,
-            self.lig.charged_atoms,
-            self.parameters.min_dist,
-            self.parameters.saltbridge_dist_max,
+            charged_atoms_1=self.rec.charged_atoms,
+            charged_atoms_2=self.lig.charged_atoms,
+            distance_min=self.parameters.min_dist,
+            distance_max=self.parameters.saltbridge_dist_max,
         )
         logger.debug(f'Found {len(self.salt_bridges_all)} salt bridge(s)')
 
         self.water_bridges_all = find_water_bridges(
-            self.rec.h_bond_acceptors,
-            self.lig.h_bond_donors,
-            self.rec.water_metal_binders,
-            self.parameters.water_bridge_mindist,
-            self.parameters.water_bridge_maxdist,
-            self.parameters.water_bridge_omega_min,
-            self.parameters.water_bridge_omega_max,
-            self.parameters.hbond_acc_angle_min,
-            self.parameters.hbond_don_angle_min,
-            False,
+            acceptors=self.rec.h_bond_acceptors,
+            donor_pairs=self.lig.h_bond_donors,
+            waters=self.rec.water_metal_binders,
+            distance_min=self.parameters.water_bridge_mindist,
+            distance_max=self.parameters.water_bridge_maxdist,
+            omega_min=self.parameters.water_bridge_omega_min,
+            omega_max=self.parameters.water_bridge_omega_max,
+            hbond_acceptor_angle_min=self.parameters.hbond_acc_angle_min,
+            hbond_donor_angle_min=self.parameters.hbond_don_angle_min,
         ) + find_water_bridges(
-            self.lig.h_bond_acceptors,
-            self.rec.h_bond_donors,
-            self.rec.water_metal_binders,
-            self.parameters.water_bridge_mindist,
-            self.parameters.water_bridge_maxdist,
-            self.parameters.water_bridge_omega_min,
-            self.parameters.water_bridge_omega_max,
-            self.parameters.hbond_acc_angle_min,
-            self.parameters.hbond_don_angle_min,
-            True,
+            acceptors=self.lig.h_bond_acceptors,
+            donor_pairs=self.rec.h_bond_donors,
+            waters=self.rec.water_metal_binders,
+            distance_min=self.parameters.water_bridge_mindist,
+            distance_max=self.parameters.water_bridge_maxdist,
+            omega_min=self.parameters.water_bridge_omega_min,
+            omega_max=self.parameters.water_bridge_omega_max,
+            hbond_acceptor_angle_min=self.parameters.hbond_acc_angle_min,
+            hbond_donor_angle_min=self.parameters.hbond_don_angle_min,
         )
         logger.debug(f'Found {len(self.water_bridges_all)} water bridge(s)')
 
         self.metal_complexes = find_metal_complexes(
-            self.rec.metals + self.lig.metals,
-            self.rec.metal_binders
+            metals=self.rec.metals + self.lig.metals,
+            metal_binders=self.rec.metal_binders
             + self.rec.water_metal_binders
             + self.lig.metal_binders,
-            self.parameters.metal_dist_max,
+            distance_max=self.parameters.metal_dist_max,
         )
         logger.debug(f'Found {len(self.metal_complexes)} metal complex(es)')
 

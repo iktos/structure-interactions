@@ -3,12 +3,11 @@ from dataclasses import dataclass
 
 @dataclass
 class InteractionParameters:
-    """
-    Thresholds for detection.
+    """Thresholds for the detection of interactions.
 
     Attributes:
         bs_dist: max dist to include binding site residues (default=7.5)
-        min_dist: min dist for all distance thresholds (default=0.5)
+        min_dist: min dist for all distance thresholds (default=2.0)
         hydrophobic_dist_max: max dist for detection of hydrophobic contacts (default=4.0)
         hbond_dist_max: max dist between d and a (hubbard & haider, 2001) + 0.5 a (default=4.0)
         hbond_don_angle_min: minimal angle for d-h-a (default=140)
@@ -19,7 +18,7 @@ class InteractionParameters:
         multipolar_dist_max: max dist between a and x (default=4.0)
         multipolar_don_angle_min: minimal angle for c-x-a (default=90)
         multipolar_norm_angle_max: max angle for c-x--camide (default=40)
-        pistacking_dist_max_t: max dist for t-shaped pi-stacking (mcgaughey, 1998) (default=5.5)
+        pistacking_dist_max_t: max dist for T-shaped pi-stacking (mcgaughey, 1998) (default=5.5)
         pistacking_dist_max_f: between pistacking_dist_max_t and pistacking_dist_max_p (default=4.75)
         pistacking_dist_max_p: max dist for parallel pi-stacking (default=4.0)
         pistacking_ang_dev: max deviation to optimal angle (0 for //, 90 for |--, between -> face/edge-to-face) (default=30)
@@ -32,7 +31,6 @@ class InteractionParameters:
         water_bridge_omega_min: min angle between a, o_wat and d hydrogen (jiang et al., 2005) - 9 (default=71)
         water_bridge_omega_max: max angle between a, o_wat and d hydrogen (jiang et al., 2005) (default=140)
         metal_dist_max: max dist between m and interacting atom (harding, 2001) (default=3.0)
-
 
     Note:
         Some distance thresholds were extended (max. 1.0 A) if too restrictive to account for low-quality structures.
@@ -52,7 +50,7 @@ class InteractionParameters:
     """
 
     bs_dist: float = 7.5
-    min_dist: float = 0.5
+    min_dist: float = 2.0
 
     # hydrophobic interactions
     hydrophobic_dist_max: float = 4.0

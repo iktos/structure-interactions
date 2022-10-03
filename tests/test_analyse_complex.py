@@ -1,3 +1,5 @@
+from deepdiff import DeepDiff
+
 from iktos.structure_interactions import analyse_complex, analyse_complexes, contacts_to_dict
 
 
@@ -78,7 +80,7 @@ def test_analyse_complex_6nw6_refine():
     )
     dict_contacts_refine = contacts_to_dict(contacts_raw)
     # check that refine removed 0 contact
-    assert dict_contacts == dict_contacts_refine
+    assert not DeepDiff(dict_contacts, dict_contacts_refine, ignore_order=True)
 
 
 def test_analyse_complexes():

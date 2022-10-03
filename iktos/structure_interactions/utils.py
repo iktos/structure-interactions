@@ -2,13 +2,21 @@ from __future__ import absolute_import
 
 from typing import Any, Dict, List, Sequence
 
-try:
-    from iktos.logger import getLogger
-except ImportError:
-    from logging import getLogger
 
-
-logger = getLogger(__name__)
+# List of attributes in interaction classes that correspond
+# to the partners involved in the interaction
+PARTNERS = [
+    'receptor',
+    'ligand',
+    'partner_1',
+    'partner_2',
+    'ring',
+    'cation',
+    'pi_carbon',
+    'hydrophobic',
+    'donor',
+    'acceptor',
+]
 
 
 def parse_pdb(pdb, as_string=True):
@@ -54,18 +62,17 @@ def contacts_to_dict(plip_list: Sequence) -> Dict[str, List[Dict[str, Any]]]:
             plip_dict[contact_name] = []
         parsed_contact = {}
         for field in contact._fields:
-            if field == 'receptor':
+            if field in PARTNERS:
+                # Check if partner is receptor (protein) or ligand
                 atom_list = getattr(contact, field)
-                # Drop Hs
-                # atom_list = [a for a in atom_list if a.atomic_num != 1]
-                parsed_contact['at_p'] = [a.atom_id for a in atom_list]
-                parsed_contact['at_name_p'] = [a.atom_name for a in atom_list]
-                if contact_name != 'Metal_Complex':
-                    parsed_contact['res_p'] = atom_list[0].residue_id
-            elif field == 'ligand':
-                atom_list = getattr(contact, field)
-                parsed_contact['at_l'] = [a.atom_id for a in atom_list]
-                parsed_contact['at_name_l'] = [a.atom_name for a in atom_list]
+                if atom_list[0].mol_title == 'receptor':
+                    parsed_contact['at_p'] = [a.atom_id for a in atom_list]
+                    parsed_contact['at_name_p'] = [a.atom_name for a in atom_list]
+                    if contact_name != 'Metal_Complex':
+                        parsed_contact['res_p'] = atom_list[0].residue_id
+                else:
+                    parsed_contact['at_l'] = [a.atom_id for a in atom_list]
+                    parsed_contact['at_name_l'] = [a.atom_name for a in atom_list]
             elif field == 'water':
                 atom_list = getattr(contact, field)
                 parsed_contact['at_owat'] = [a.atom_id for a in atom_list]
