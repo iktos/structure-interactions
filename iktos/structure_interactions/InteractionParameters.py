@@ -58,7 +58,7 @@ class InteractionParameters:
     # h-bonds
     hbond_dist_max: float = 4.0
     hbond_don_angle_min: float = 140
-    hbond_acc_angle_min: float = 100
+    hbond_acc_angle_min: float = 90
 
     # halogen bonds (cl/br/i with e.g. [o]=c)
     xbond_dist_max: float = 4.0

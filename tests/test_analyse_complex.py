@@ -35,8 +35,8 @@ def test_analyse_complex_5n9t():
     dict_contacts = contacts_to_dict(contacts_raw)
     assert len(dict_contacts["Hydrophobic"]) == 7
     assert len(dict_contacts["Pi_Hydrophobic"]) == 2
-    assert len(dict_contacts["H_Bond"]) == 5
-    assert len(dict_contacts["H_Bond_Weak"]) == 2
+    assert len(dict_contacts["H_Bond"]) == 6
+    assert len(dict_contacts["H_Bond_Weak"]) == 3
     assert len(dict_contacts["Multipolar"]) == 3
     assert len(dict_contacts) == 5
 
@@ -55,7 +55,7 @@ def test_analyse_complex_6nw6():
     assert len(dict_contacts["Hydrophobic"]) == 1
     assert len(dict_contacts["Pi_Hydrophobic"]) == 1
     assert len(dict_contacts["H_Bond"]) == 5
-    assert len(dict_contacts["H_Bond_Weak"]) == 3
+    assert len(dict_contacts["H_Bond_Weak"]) == 4
     assert len(dict_contacts["Pi_Amide"]) == 1
     assert len(dict_contacts) == 5
 
