@@ -7,7 +7,7 @@ packages = [
   {include = "iktos/**/*.py"},
 ]
 readme = "README.md"
-version = "0.5.0"
+version = "0.6.0"
 
 [[tool.poetry.source]]
 name = "iktos"
@@ -33,6 +33,7 @@ mypy = "^0.910"
 pytest = "^6.2.2"
 pytest-cov = "^3.0.0"
 taskipy = "^1.2.1"
+importlib-metadata = "<5"
 
 [tool.taskipy.tasks]
 black = "black iktos/"
