@@ -190,7 +190,8 @@ def refine_h_bonds(
         if h_lig_ids.isdisjoint(b_lig_ids):
             continue
         logger.debug(
-            f'Removing H-bond: {(h.acceptor[0].unique_id, h.donor[0].unique_id)}'
+            'Removing H-bond (duplicate): '
+            f'{(h.acceptor[0].unique_id, h.donor[0].unique_id)}'
         )
         filter_out.append(h)
     selection1 = [contact for contact in h_bonds_all if contact not in filter_out]
@@ -207,7 +208,8 @@ def refine_h_bonds(
         if h_rec_ids.isdisjoint(w_wat_ids) or h_lig_ids != w_lig_ids:
             continue
         logger.debug(
-            f'Removing H-bond: {(h.acceptor[0].unique_id, h.donor[0].unique_id)}'
+            'Removing H-bond (water bridge): '
+            f'{(h.acceptor[0].unique_id, h.donor[0].unique_id)}'
         )
         filter_out.append(h)
     selection2 = [h for h in selection1 if h not in filter_out]
@@ -222,7 +224,8 @@ def refine_h_bonds(
         if h_rec_ids.isdisjoint(c_rec_ids):
             continue
         logger.debug(
-            f'Removing H-bond: {(h.acceptor[0].unique_id, h.donor[0].unique_id)}'
+            'Removing H-bond (metal complex): '
+            f'{(h.acceptor[0].unique_id, h.donor[0].unique_id)}'
         )
         filter_out.append(h)
     selection3 = [h for h in selection2 if h not in filter_out]
@@ -251,7 +254,8 @@ def refine_h_bonds(
         else:
             h = h1 if h1.angle_dha < h2.angle_dha else h2
         logger.debug(
-            f'Removing H-bond: {(h.acceptor[0].unique_id, h.donor[0].unique_id)}'
+            'Removing H-bond (donor with multiple H-bonds): '
+            f'{(h.acceptor[0].unique_id, h.donor[0].unique_id)}'
         )
         filter_out.append(h)
     return [contact for contact in selection3 if contact not in filter_out]

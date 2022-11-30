@@ -2,8 +2,7 @@ import json
 
 from deepdiff import DeepDiff
 
-from iktos.structure_interactions.analyse_complex import analyse_complex
-from iktos.structure_interactions.utils import contacts_to_dict
+from iktos.structure_interactions import analyse_interactions_inter, convert_to_dict_inter
 
 
 def test_contacts_to_dict_1P5E():
@@ -14,14 +13,14 @@ def test_contacts_to_dict_1P5E():
     protein_path = 'tests/data/prot_1P5E.pdb'
     ligand_path = 'tests/data/lig_1P5E.sdf'
 
-    contacts_ref = analyse_complex(
+    contacts_ref = analyse_interactions_inter(
         rec_coords=protein_path,
         lig_coords=ligand_path,
         as_string=False,
         refine=True,
         lig_format='sdf',
     )
-    contacts_ref = contacts_to_dict(contacts_ref)
+    contacts_ref = convert_to_dict_inter(contacts_ref)
 
     with open('tests/data/contacts_1P5E.json', 'r') as f:
         expected_contacts = json.load(f)
@@ -41,14 +40,14 @@ def test_contacts_to_dict_3S3M():
     protein_path = 'tests/data/prot_3S3M.pdb'
     ligand_path = 'tests/data/lig_3S3M.sdf'
 
-    contacts_ref = analyse_complex(
+    contacts_ref = analyse_interactions_inter(
         rec_coords=protein_path,
         lig_coords=ligand_path,
         as_string=False,
         refine=True,
         lig_format='sdf',
     )
-    contacts_ref = contacts_to_dict(contacts_ref)
+    contacts_ref = convert_to_dict_inter(contacts_ref)
 
     with open('tests/data/contacts_3S3M.json', 'r') as f:
         expected_contacts = json.load(f)
@@ -68,14 +67,14 @@ def test_contacts_to_dict_5N9T():
     protein_path = 'tests/data/prot_5N9T.pdb'
     ligand_path = 'tests/data/lig_5N9T.sdf'
 
-    contacts_ref = analyse_complex(
+    contacts_ref = analyse_interactions_inter(
         rec_coords=protein_path,
         lig_coords=ligand_path,
         as_string=False,
         refine=True,
         lig_format='sdf',
     )
-    contacts_ref = contacts_to_dict(contacts_ref)
+    contacts_ref = convert_to_dict_inter(contacts_ref)
 
     with open('tests/data/contacts_5N9T.json', 'r') as f:
         expected_contacts = json.load(f)
@@ -95,14 +94,14 @@ def test_contacts_to_dict_5UIT():
     protein_path = 'tests/data/prot_5UIT.pdb'
     ligand_path = 'tests/data/lig_5UIT.sdf'
 
-    contacts_ref = analyse_complex(
+    contacts_ref = analyse_interactions_inter(
         rec_coords=protein_path,
         lig_coords=ligand_path,
         as_string=False,
         refine=True,
         lig_format='sdf',
     )
-    contacts_ref = contacts_to_dict(contacts_ref)
+    contacts_ref = convert_to_dict_inter(contacts_ref)
 
     with open('tests/data/contacts_5UIT.json', 'r') as f:
         expected_contacts = json.load(f)
@@ -122,14 +121,14 @@ def test_contacts_to_dict_6NO9():
     protein_path = 'tests/data/prot_6NO9.pdb'
     ligand_path = 'tests/data/lig_6NO9.sdf'
 
-    contacts_ref = analyse_complex(
+    contacts_ref = analyse_interactions_inter(
         rec_coords=protein_path,
         lig_coords=ligand_path,
         as_string=False,
         refine=True,
         lig_format='sdf',
     )
-    contacts_ref = contacts_to_dict(contacts_ref)
+    contacts_ref = convert_to_dict_inter(contacts_ref)
 
     with open('tests/data/contacts_6NO9.json', 'r') as f:
         expected_contacts = json.load(f)
@@ -149,14 +148,14 @@ def test_contacts_to_dict_6NW6():
     protein_path = 'tests/data/prot_6NW6.pdb'
     ligand_path = 'tests/data/lig_6NW6.sdf'
 
-    contacts_ref = analyse_complex(
+    contacts_ref = analyse_interactions_inter(
         rec_coords=protein_path,
         lig_coords=ligand_path,
         as_string=False,
         refine=True,
         lig_format='sdf',
     )
-    contacts_ref = contacts_to_dict(contacts_ref)
+    contacts_ref = convert_to_dict_inter(contacts_ref)
 
     with open('tests/data/contacts_6NW6.json', 'r') as f:
         expected_contacts = json.load(f)

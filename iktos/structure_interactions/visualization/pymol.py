@@ -6,15 +6,21 @@ Proprietary and confidential
 
 from typing import Any, Dict, List, Optional
 
-import logging
+try:
+    from iktos.logger import getLogger
+except ImportError:
+    from logging import getLogger
+
 
 from .utils import (
+    draw_contacts_intra,
     initialise_session,
+    load_block,
     load_complex_from_blocks,
     load_ligand_from_block,
 )
 
-logger = logging.getLogger(__name__)
+LOGGER = getLogger(__name__)
 
 
 try:
@@ -23,7 +29,7 @@ except ModuleNotFoundError:
     pass
 
 
-def prepare_session(
+def prepare_session_inter(
     protein_pdb_block: str,
     ligand_sdf_block: Optional[str] = None,
     contacts: Optional[Dict[str, Any]] = None,
@@ -103,11 +109,11 @@ def prepare_session(
     if hide_non_polar_hs:
         pymol_cmd.hide('everything', 'h. and (e. c extend 1)')
     if output_file_path:
-        logger.info(f'Saving Pymol session in `{output_file_path}`')
+        LOGGER.info(f'Saving Pymol session in `{output_file_path}`')
         pymol_cmd.save(output_file_path)
 
 
-def prepare_session_multistate(
+def prepare_session_inter_multistate(
     protein_pdb_blocks: List[str],
     ligand_sdf_blocks: Optional[List[str]] = None,
     contacts: Optional[List[Dict[str, Any]]] = None,
@@ -202,5 +208,46 @@ def prepare_session_multistate(
     if hide_non_polar_hs:
         pymol_cmd.hide('everything', 'h. and (e. c extend 1)')
     if output_file_path:
-        logger.info(f'Saving Pymol session in `{output_file_path}`')
+        LOGGER.info(f'Saving Pymol session in `{output_file_path}`')
+        pymol_cmd.save(output_file_path)
+
+
+def prepare_session_intra(
+    coords_block: str,
+    fmt: str,
+    contacts: Dict[str, Any],
+    color_molecule: Optional[str] = None,
+    color_bg: str = 'grey',
+    hide_non_polar_hs: bool = True,
+    output_file_path: Optional[str] = None,
+    start_from_scratch: bool = True,
+) -> None:
+    """Prepares a standard Pymol session with intramolecular contacts.
+
+    Args:
+        coords_block: coords block.
+        fmt: format of coords block.
+        contacts: dict with intramolecular contacts.
+        color_molecule: color of atoms (e.g. cbaw, default: standard coloring).
+        color_bg: background color (default: `grey`).
+        hide_non_polar_hs: whether to hide non-polar Hs (default: True).
+        output_file_path: name of final Pymol session (.pse, default: None -> session not saved).
+        start_from_scratch: whether to start the session from scratch (delete all in the beginning).
+    """
+    initialise_session(start_from_scratch=start_from_scratch, color_bg=color_bg)
+    load_block(
+        coords_block=coords_block,
+        fmt=fmt,
+        label='Mol',
+        color_molecule=color_molecule,
+    )
+    draw_contacts_intra(
+        contacts=contacts,
+        label='Mol',
+    )
+    pymol_cmd.show('lines', '*')
+    if hide_non_polar_hs:
+        pymol_cmd.hide('everything', 'h. and (e. c extend 1)')
+    if output_file_path:
+        LOGGER.info(f'Saving Pymol session in `{output_file_path}`')
         pymol_cmd.save(output_file_path)

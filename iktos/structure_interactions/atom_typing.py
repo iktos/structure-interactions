@@ -101,9 +101,12 @@ class HydrophobicAtom(NamedTuple):
 
     Attributes:
         atom_list: hydrophobic atom (in a list to be consistent with other classes).
+        neighbours_radius_2: neighbours of hydrophobic atom up to radius 2 - this is used
+            to discard interactios between bound atoms (relevant for intra).
     """
 
     atom_list: List[Atom]
+    neighbours_radius_2: List[Atom]
 
 
 def find_hydrophobics(obatoms: List[OBAtom]) -> List[HydrophobicAtom]:
@@ -128,7 +131,27 @@ def find_hydrophobics(obatoms: List[OBAtom]) -> List[HydrophobicAtom]:
                 f'Excluding S{obatom.GetId()} from list of hydrophobics (not SP3)'
             )
             continue
-        selection.append(HydrophobicAtom(atom_list=[Atom(obatom)]))
+        # List neighbours radius 1
+        obneighs_1 = [
+            obneigh for obneigh in OBAtomAtomIter(obatom) if obneigh.GetAtomicNum() != 1
+        ]
+        obneighs_all = [a for a in obneighs_1]
+        # Extend with neighbours radius 2
+        for obneigh_1 in obneighs_1:
+            obneighs_2 = [
+                obneigh
+                for obneigh in OBAtomAtomIter(obneigh_1)
+                if obneigh.GetAtomicNum() != 1
+                and obneigh != obatom
+                and obneigh not in obneighs_all
+            ]
+            obneighs_all.extend(obneighs_2)
+        selection.append(
+            HydrophobicAtom(
+                atom_list=[Atom(obatom)],
+                neighbours_radius_2=[Atom(obneigh) for obneigh in obneighs_all],
+            )
+        )
     logger.debug(f'Found {len(selection)} hydrophobic atoms')
     return selection
 

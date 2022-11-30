@@ -1,4 +1,10 @@
-from iktos.structure_interactions import analyse_complex, analyse_complexes, contacts_to_dict
+from iktos.structure_interactions import (
+    analyse_interactions_inter,
+    analyse_interactions_inter_multi,
+    convert_to_dict_inter,
+)
+from iktos.structure_interactions.visualization.pymol import prepare_session_inter
+
 
 """
 NOTES:
@@ -15,7 +21,7 @@ NOTES:
 # Example to analyse contacts in a single complex:
 protein_path = 'data/prot_5UIT.pdb'  # PDB file
 ligand_path = 'data/lig_5UIT.sdf'  # SDF file is recommended
-contacts_raw = analyse_complex(
+contacts_raw = analyse_interactions_inter(
     rec_coords=protein_path,
     lig_coords=ligand_path,
     as_string=False,  # set to True if you want to give the content of the files instead
@@ -24,15 +30,23 @@ contacts_raw = analyse_complex(
 )
 # The previous function returns a list of contact objects - to use it in SA,
 # you need to convert them to a dict:
-dict_contacts = contacts_to_dict(contacts_raw)
+dict_contacts = convert_to_dict_inter(contacts_raw)
 print(f'Dict of contacts: {dict_contacts}')
 
+# Prepare a Pymol session to visualise the contacts:
+prepare_session_inter(
+    open(protein_path, 'r').read(),
+    open(ligand_path, 'r').read(),
+    dict_contacts,
+    color_bg='white',
+    output_file_path='output_inter.pse'
+)
 
 # Example to analyse contacts in multiple complexes (different ligands with the same protein,
 # e.g. to analyse docking poses, this function is faster than looping over the complexes):
 protein_path = 'data/prot_5UIT.pdb'  # PDB file
 ligand_path = 'data/lig_5UIT.sdf'  # SDF file is recommended
-contacts_raw_multi = analyse_complexes(
+contacts_raw_multi = analyse_interactions_inter_multi(
     rec_coords=protein_path,
     lig_coords=[ligand_path] * 5,
     as_string=False,  # set to True if you want to give the content of the files instead
@@ -41,5 +55,6 @@ contacts_raw_multi = analyse_complexes(
 )
 # The previous function returns a list of list of contact objects - to use it in SA,
 # you need to convert them to a list of dicts:
-dict_contacts = [contacts_to_dict(contacts_raw) for contacts_raw in contacts_raw_multi]
+dict_contacts = [convert_to_dict_inter(contacts_raw) for contacts_raw in contacts_raw_multi]
 print(f'List of dicts of contacts: {dict_contacts}')
+

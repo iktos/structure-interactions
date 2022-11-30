@@ -10,18 +10,21 @@ import random
 import tempfile
 from typing import Any, Dict, List, Optional
 
-import logging
+try:
+    from iktos.logger import getLogger
+except ImportError:
+    from logging import getLogger
 
 from .constants import CONTACT_COLOR
 
 
-logger = logging.getLogger(__name__)
+LOGGER = getLogger(__name__)
 
 
 try:
     from pymol import cmd as pymol_cmd, util, querying, CmdException  # noqa: F401
 except ModuleNotFoundError:
-    logger.warning('Module Pymol not found')
+    LOGGER.warning('Module Pymol not found')
 
 
 def get_colors() -> List:
@@ -165,8 +168,7 @@ def show_weights(
     labels = ''
     for contact_type, contacts in weights.items():
         if contact_type not in CONTACT_COLOR:
-            logger.warning(f'Contact type {contact_type} not handled')
-            continue
+            raise ValueError(f'Contact type {contact_type} not handled')
         for prot_id, weight in contacts.items():
             # To avoid bug with multistate sessions
             weight = max(weight, 0.1)
@@ -186,8 +188,8 @@ def show_weights(
                 )
             try:
                 centroid = pymol_cmd.centerofmass(selection, state=state)
-            except CmdException:
-                raise ValueError(f'Invalid selection `{selection}`')
+            except CmdException as e:
+                raise ValueError(f'Invalid selection `{selection}`') from e
             label = f'{contact_type}_{residue_id}_{label_weights}'
             labels += label + ' '
             color = CONTACT_COLOR[contact_type]
@@ -221,17 +223,17 @@ def initialise_session(start_from_scratch: bool = True, color_bg: str = 'grey'):
         color_bg: background color (default: 'grey')
     """
     if start_from_scratch:
-        logger.info('Starting a new Pymol session')
+        LOGGER.info('Starting a new Pymol session')
         pymol_cmd.delete('all')
     else:
-        logger.info('Will continue with existing Pymol session (if any)')
+        LOGGER.info('Will continue with existing Pymol session (if any)')
     pymol_cmd.bg_color(color=color_bg)
 
 
 def load_block(
     coords_block: str,
     label: str,
-    format: str = 'mol2',
+    fmt: str = 'mol2',
     color_molecule: Optional[str] = None,
     state: int = 1,
 ) -> None:
@@ -239,17 +241,17 @@ def load_block(
 
     Args:
         mol2_block: coords block
-        format: format of coords block (allows: mol2, sdf, pdb)
+        fmt: format of coords block (allows: mol2, sdf, pdb)
             mol2 and sdf are loaded with discrete=1 to avoid connectivity issues
         label: name of molecule in Pymol
         color_molecule (optional): color molecule by atom
         state: index of the Pymol state, useful for ensemble docking
     """
-    _id, path = tempfile.mkstemp(suffix=f'.{format}')
+    _id, path = tempfile.mkstemp(suffix=f'.{fmt}')
     try:
         with os.fdopen(_id, 'w') as tmp:
             tmp.write(coords_block)
-        if format in ['mol2', 'sdf']:
+        if fmt in ['mol2', 'sdf']:
             load_file(
                 path,
                 label=label,
@@ -270,30 +272,27 @@ def load_block(
 
 
 def load_file(
-    filename: str,
+    file_path: str,
     label: str,
     color_molecule: Optional[str] = None,
     discrete: int = -1,
     state: int = 1,
-    wdir: str = './',
 ) -> None:
     """Loads a coord file to an existing Pymol session (if any, else creates a new session).
 
     Args:
-        filename: name of a coords file (PDB, SDF, MOL2, etc)
+        file_path: path to a coords file (PDB, SDF, MOL2, etc)
         label: name of molecule in Pymol
         color_molecule (optional): color molecule by atom
         discrete: if = 0, load the file partially, assuming same connectivity as state 1
                   if = 1, load the entire file, states are therefore independent
                   default = -1, choose depending on the format (SDF -> 1, PDB and MOL2 -> 0)
         state: index of the Pymol state, useful for ensemble docking
-        wdir: path to coords file directory (default: current directory)
     """
-    logger.debug(f'Loading {filename}')
-    filepath = os.path.join(wdir, filename)
-    if not os.path.isfile(filepath):
-        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filepath)
-    pymol_cmd.load(filepath, label, state=state, discrete=discrete)
+    LOGGER.debug(f'Loading {file_path}')
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
+    pymol_cmd.load(file_path, label, state=state, discrete=discrete)
     if color_molecule:
         util = globals()['util']  # noqa: F811
         cba = getattr(util, color_molecule)
@@ -338,13 +337,13 @@ def load_complex_from_blocks(
         show_binding_site_as: show binding site residues as (default: `lines`)
         start_from_scratch: whether to start the session from scratch (delete all in the beginning)
     """
-    logger.debug('Attempting to load a single protein-ligand complex')
+    LOGGER.debug('Attempting to load a single protein-ligand complex')
     if protein_block:
         load_block(
             coords_block=protein_block,
             label=label_protein,
             color_molecule=color_protein,
-            format=protein_format,
+            fmt=protein_format,
             state=state,
         )
         if weights:
@@ -361,11 +360,11 @@ def load_complex_from_blocks(
                 coords_block=ligand_block,
                 label=label_ligand,
                 color_molecule=color_ligand,
-                format=ligand_format,
+                fmt=ligand_format,
                 state=state,
             )
             if contacts is not None:
-                logger.debug('Found contacts for protein-ligand complex')
+                LOGGER.debug('Found contacts for protein-ligand complex')
                 if not isinstance(contacts, Dict):
                     raise ValueError('Bad input: `contacts` should be a dict')
                 draw_contacts(
@@ -410,7 +409,7 @@ def load_complex_from_files(
         start_from_scratch: whether to start the session from scratch (delete all in the beginning)
         wdir: path to coords file directory (default: current directory)
     """
-    logger.debug('Attempting to load a single protein-ligand complex')
+    LOGGER.debug('Attempting to load a single protein-ligand complex')
     if contacts is not None and not isinstance(contacts, Dict):
         raise ValueError('Bad input: `contacts` should be a dict')
     load_file(
@@ -430,7 +429,7 @@ def load_complex_from_files(
             show_binding_site_as=show_binding_site_as,
         )
     if contacts is not None:
-        logger.debug('Found contacts for protein-ligand complex')
+        LOGGER.debug('Found contacts for protein-ligand complex')
         draw_contacts(
             contacts=contacts,
             label_protein=label_protein,
@@ -459,9 +458,9 @@ def load_ligand_from_block(
         show_binding_site_as: show binding site residues as (default: `lines`)
         state: index of the Pymol state, useful for ensemble docking
     """
-    logger.debug('Attempting to load a single ligand/pose')
+    LOGGER.debug('Attempting to load a single ligand/pose')
     if mol2_block is None:
-        logger.debug('MOL2 block is None -> pass')
+        LOGGER.debug('MOL2 block is None -> pass')
         return
     load_block(mol2_block, label=label_ligand, state=state)
     if contacts is not None:
@@ -507,8 +506,8 @@ def _add_centroids(
     try:
         centroid = pymol_cmd.centerofmass(sel1, state=state)
         pymol_cmd.pseudoatom(label_centroid_ligand, pos=centroid, state=state)
-    except CmdException:
-        raise ValueError(f'Invalid selection `{sel1}`')
+    except CmdException as e:
+        raise ValueError(f'Invalid selection `{sel1}`') from e
 
     # Select atoms on protein side (using residue seq nbs
     # and chain ID if available) and add centroid
@@ -654,8 +653,7 @@ def _draw_contact_dash(
         state: index of the Pymol state, useful for ensemble docking
     """
     if not contact['at_l'] or not contact['at_name_p']:
-        logger.warning(f'Invalid contact dict `{contact}`')
-        return None
+        raise ValueError(f'Invalid contact dict `{contact}`')
     if 'at_m' in contact:  # -> metal complex
         _draw_metal_bridge(
             contact=contact,
@@ -686,3 +684,53 @@ def _draw_contact_dash(
     pymol_cmd.delete('PiS1')
     pymol_cmd.delete('PiS2')
     pymol_cmd.delete('PiS3')
+
+
+def draw_contacts_intra(
+    contacts: Dict[str, Any],
+    label: str,
+    state: int = 1,
+) -> None:
+    """Draws intramolecular contacts. Modifies an existing Pymol scene object.
+
+    Args:
+        contacts: dict with intramolecular contacts.
+        label: name of the Pymol object.
+        state: index of the Pymol state (useful for ensemble docking).
+    """
+    labels = f'{label} '
+    for contact_type in CONTACT_COLOR:
+        labels += f'{contact_type}_{label} '
+        if contact_type not in contacts:
+            continue
+        for contact in contacts[contact_type]:
+            # Select atoms and add centroid on partner 1
+            sel1 = 'id ' + ' or id '.join([str(i) for i in contact['partner_1']])
+            sel1 = f'({sel1}) and {label}'
+            try:
+                centroid = pymol_cmd.centerofmass(sel1)
+                pymol_cmd.pseudoatom('PiS1', pos=centroid)
+            except CmdException:
+                raise ValueError(f'Invalid selection `{sel1}`')
+
+            # Select atoms and add centroid on partner 2
+            sel2 = 'id ' + ' or id '.join([str(i) for i in contact['partner_2']])
+            try:
+                centroid = pymol_cmd.centerofmass(sel2)
+                pymol_cmd.pseudoatom('PiS2', pos=centroid)
+            except CmdException:
+                raise ValueError(f'Invalid selection `{sel2}`')
+
+            # Draw contact
+            pymol_cmd.distance(f'{contact_type}_{label}', 'PiS1', 'PiS2')
+            pymol_cmd.set(
+                'dash_color', CONTACT_COLOR[contact_type], f'{contact_type}_{label}'
+            )
+            pymol_cmd.set('dash_gap', 0.2, f'{contact_type}_{label}')
+            pymol_cmd.set('dash_radius', 0.08, f'{contact_type}_{label}')
+            pymol_cmd.delete('PiS1')
+            pymol_cmd.delete('PiS2')
+            pymol_cmd.delete('PiS3')
+
+    pymol_cmd.group(f'{label}_all', f'{labels}')
+    # pymol_cmd.disable(f'{label}_all')

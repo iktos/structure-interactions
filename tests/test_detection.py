@@ -1,5 +1,4 @@
-from iktos.structure_interactions import contacts_to_dict
-from iktos.structure_interactions.InteractionProfiler import InteractionProfiler
+from iktos.structure_interactions import convert_to_dict_inter
 from iktos.structure_interactions.Ligand import Ligand
 from iktos.structure_interactions.Receptor import Receptor
 from iktos.structure_interactions.detection import (
@@ -13,10 +12,9 @@ def test_find_metal_complexes():
     receptor = Receptor('tests/data/prot_3S3M.pdb', as_string=False)
     receptor.detect_binding_site([ligand], distance=10.0)
     receptor.identify_functional_groups()
-    plip = InteractionProfiler(receptor, ligand)
     complexes = find_metal_complexes(
-        plip.rec.metals + plip.lig.metals,
-        plip.rec.metal_binders + plip.lig.metal_binders + plip.rec.water_metal_binders,
+        receptor.metals + ligand.metals,
+        receptor.metal_binders + ligand.metal_binders + receptor.water_metal_binders,
         distance_max=3.0,
     )
     assert len(complexes) == 2
@@ -46,4 +44,4 @@ def test_find_metal_complexes():
             },
         ]
     }
-    assert contacts_to_dict(complexes) == expected_contacts
+    assert convert_to_dict_inter(complexes) == expected_contacts

@@ -4,14 +4,17 @@ Unauthorized copying of this file, via any medium is strictly prohibited
 Proprietary and confidential
 """
 
-import json, re
+import json
+import os
+import re
 
 from iktos.structure_interactions.visualization.pymol import (
-    prepare_session, prepare_session_multistate
+    prepare_session_inter,
+    prepare_session_inter_multistate,
+    prepare_session_intra,
 )
 
-
-def parse_multi_mol2(multi_mol2_block: str):
+def _parse_multi_mol2(multi_mol2_block: str):
     blocks = []
     pattern = "@<TRIPOS>MOLECULE"
     mol2_content_split = re.split(pattern, multi_mol2_block)[1:]
@@ -23,47 +26,71 @@ def parse_multi_mol2(multi_mol2_block: str):
         blocks.append(mol2_block_clean)
     return blocks
 
-def test_pymol():
-    with open("tests/files/protein.pdb", "r") as f:
-        protein_xray = f.read()
-    with open("tests/files/ligand.sdf", "r") as f:
-        ligand_xray = f.read()
-    with open("tests/files/contacts_xray.json") as f:
-        contacts_xray = json.load(f)
-    with open("tests/files/multi_mol2.mol2", "r") as f:
-    	docking_poses = parse_multi_mol2(f.read())
-    docking_poses = docking_poses[0:8]
-    weights = {
-	'Hydrophobic': {'MET|A|31|CE': 1.0,
-	'LYS|A|52|CB': 1.0,
-  	'VAL|A|85|CG1': 1.0,
-  	'LEU|A|157|CD1': 1.0},
- 	'Pi_Hydrophobic': {'TYR|A|101|CD1+CD2+CE1+CE2+CG+CZ': 1.0,
-  	'VAL|A|39|CG1': 1.0},
- 	'H_Bond_Weak': {'GLU|A|33|O': 0.5, 'TYR|A|103|CA+HA': 0.5},
- 	'H_Bond': {'VAL|A|102|O': 1.0,
-  	'ALA|A|154|O': 1.0,
-  	'MET|A|104|H+N': 1.0,
-  	'SER|A|167|HG+OG': 1.0}
-    }
-    prepare_session(
-        protein_pdb_block=protein_xray,
-        ligand_sdf_block=ligand_xray,
-        contacts=contacts_xray,
-        extra_mol2_blocks=docking_poses,
-        weights=weights,
-        output_file_path="tests/files/pymol.pse",
+
+with open("tests/data/prot_5UIT.pdb", "r") as f:
+    PROTEIN_BLOCK = f.read()
+with open("tests/data/lig_5UIT.sdf", "r") as f:
+    LIGAND_BLOCK = f.read()
+with open("tests/data/contacts_5UIT.json") as f:
+    CONTACTS = json.load(f)
+with open("tests/data/multi_mol2.mol2", "r") as f:
+    POSES = _parse_multi_mol2(f.read())
+WEIGHTS = {
+    'Hydrophobic': {'MET|A|31|CE': 1.0},
+}
+
+
+def test_prepare_session_inter():
+    output_file_path = 'pymol.pse'
+    prepare_session_inter(
+        protein_pdb_block=PROTEIN_BLOCK,
+        ligand_sdf_block=LIGAND_BLOCK,
+        contacts=CONTACTS,
+        extra_mol2_blocks=POSES,
+        weights=WEIGHTS,
+        output_file_path=output_file_path,
         color_bg="white",
         color_protein="cbaw",
         sphere_scale=2.0,
     )
-    prepare_session_multistate(
-        protein_pdb_blocks=[protein_xray] * 8,
-        ligand_sdf_blocks=[ligand_xray] * 8,
-        contacts=[contacts_xray] * 8,
-        extra_mol2_blocks=[docking_poses],
-        weights=weights,
-        output_file_path="tests/files/pymol_multistate.pse",
+    assert os.path.exists(output_file_path)
+    os.remove(output_file_path)
+
+
+def test_prepare_session_inter_multistate():
+    output_file_path = 'pymol_multistate.pse'
+    prepare_session_inter_multistate(
+        protein_pdb_blocks=[PROTEIN_BLOCK] * 2,
+        ligand_sdf_blocks=[LIGAND_BLOCK] * 2,
+        contacts=[CONTACTS] * 2,
+        extra_mol2_blocks=[POSES],
+        weights=WEIGHTS,
+        output_file_path=output_file_path,
         color_bg="white",
         color_protein="cbaw",
     )
+    assert os.path.exists(output_file_path)
+    os.remove(output_file_path)
+
+
+def test_prepare_session_intra():
+    output_file_path = 'pymol_intra.pse'
+    contacts_intra = {
+        'H_Bond': [
+            {
+                'partner_1': [173, 174],
+                'partner_2': [131],
+                'type': 'strong',
+            },
+        ],
+    }
+    prepare_session_intra(
+        coords_block=PROTEIN_BLOCK,
+        fmt='pdb',
+        contacts=contacts_intra,
+        output_file_path=output_file_path,
+        color_bg="white",
+        color_molecule="cbaw",
+    )
+    assert os.path.exists(output_file_path)
+    os.remove(output_file_path)

@@ -45,15 +45,19 @@ def parse_pdb(pdb, as_string=True):
     return pdb_block, mapping
 
 
-def contacts_to_dict(plip_list: Sequence) -> Dict[str, List[Dict[str, Any]]]:
-    """Converts detected contacts to dict of contacts as expected
-    by functions in SA.
+def convert_to_dict_inter(interactions: Sequence) -> Dict[str, List[Dict[str, Any]]]:
+    """Converts intermolecular interactions to a dict of contacts.
+
+    Warning:
+        The dict returned by this function is used in SA, its format should
+            not be changed.
+        The function assumes that the interactions are between a ligand and a receptor.
 
     Args:
-        plip_list: list of contacts detected by `InteractionProfiler`.
+        interactions: list of interaction objects.
     """
     plip_dict: Dict[str, Any] = {}
-    for contact in plip_list:
+    for contact in interactions:
         contact_name = type(contact).__name__
         if contact_name == 'H_Bond':
             if contact.type == 'weak':
@@ -82,6 +86,34 @@ def contacts_to_dict(plip_list: Sequence) -> Dict[str, List[Dict[str, Any]]]:
                 parsed_contact['at_m'] = [a.atom_id for a in atom_list]
                 parsed_contact['at_name_m'] = [a.atom_name for a in atom_list]
                 parsed_contact['res_p'] = atom_list[0].residue_id
+            else:
+                parsed_contact[field] = getattr(contact, field)
+        plip_dict[contact_name].append(parsed_contact)
+    return plip_dict
+
+
+def convert_to_dict_intra(interactions: Sequence) -> Dict[str, List[Dict[str, Any]]]:
+    """Converts intramolecular interactions to a dict of contacts.
+
+    Args:
+        interactions: list of interaction objects.
+    """
+    plip_dict: Dict[str, Any] = {}
+    for contact in interactions:
+        contact_name = type(contact).__name__
+        if contact_name == 'H_Bond':
+            if contact.type == 'weak':
+                contact_name += '_Weak'
+        if contact_name not in plip_dict:
+            plip_dict[contact_name] = []
+        parsed_contact = {}
+        for field in contact._fields:
+            if field in PARTNERS:
+                atom_list = getattr(contact, field)
+                if 'partner_1' in parsed_contact:
+                    parsed_contact['partner_2'] = [a.atom_id for a in atom_list]
+                else:
+                    parsed_contact['partner_1'] = [a.atom_id for a in atom_list]
             else:
                 parsed_contact[field] = getattr(contact, field)
         plip_dict[contact_name].append(parsed_contact)

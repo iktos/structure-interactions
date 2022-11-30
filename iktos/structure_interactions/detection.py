@@ -77,6 +77,11 @@ def find_hydrophobics(
             ]
         ):
             continue
+        # If atoms are bound (up to 3 bonds apart, relevant for intra), pass
+        ids_1 = [atom.unique_id for atom in partner_1.neighbours_radius_2]
+        ids_2 = [atom.unique_id for atom in partner_2.neighbours_radius_2]
+        if any([i in ids_2 for i in ids_1]):
+            continue
         # Save contact
         contact = Hydrophobic(
             partner_1=partner_1.atom_list, partner_2=partner_2.atom_list, distance=dist
@@ -161,6 +166,11 @@ def find_pi_stackings(
                 for pairing in pairings
             ]
         ):
+            continue
+        # If the rings share any atom (only relevant for intra), pass
+        ids_1 = [atom.unique_id for atom in ring_1.atom_list]
+        ids_2 = [atom.unique_id for atom in ring_2.atom_list]
+        if any([i in ids_2 for i in ids_1]):
             continue
         # Save contact
         contact = Pi_Stacking(
@@ -792,7 +802,7 @@ def find_metal_complexes(
         if metal_id not in pairings_dict:
             pairings_dict[metal_id] = []
         pairings_dict[metal_id].append((metal, binder))
-    # Save releavant contacts
+    # Save relevant contacts
     for i, (metal_id, contact_pairs) in enumerate(pairings_dict.items()):
         logger.debug(f'Looking at metal: {metal_id}')
         # If the list of binders doesn't include receptor and ligand, discard

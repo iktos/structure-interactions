@@ -1,12 +1,16 @@
-from .analyse_complex import analyse_complex, analyse_complexes
+from .analysis import (
+    analyse_interactions_inter,
+    analyse_interactions_inter_multi,
+    analyse_interactions_intra,
+)
 from .Atom import Atom
-from .InteractionProfiler import InteractionProfiler
-from .utils import contacts_to_dict
+from .utils import convert_to_dict_inter, convert_to_dict_intra
 
 __all__ = [
-    'analyse_complex',
-    'analyse_complexes',
+    'analyse_interactions_inter',
+    'analyse_interactions_inter_multi',
+    'analyse_interactions_intra',
     'Atom',
-    'contacts_to_dict',
-    'InteractionProfiler',
+    'convert_to_dict_inter',
+    'convert_to_dict_intra',
 ]
