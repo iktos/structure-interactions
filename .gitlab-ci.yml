@@ -9,7 +9,7 @@ include:
 
 .python:
   tags:
-    - python-structure-based
+    - python-structure-based-nordkit
 
 test:
   extends: .test_stage
@@ -17,6 +17,7 @@ test:
     - poetry config --local virtualenvs.in-project true
     - poetry run task test
     - poetry run coverage xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     when: always
     paths:
