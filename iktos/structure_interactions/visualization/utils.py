@@ -233,14 +233,14 @@ def initialise_session(start_from_scratch: bool = True, color_bg: str = 'grey'):
 def load_block(
     coords_block: str,
     label: str,
-    fmt: str = 'mol2',
+    fmt: str = 'sdf',
     color_molecule: Optional[str] = None,
     state: int = 1,
 ) -> None:
     """Loads a coords block to an existing Pymol session (if any, else creates a new session).
 
     Args:
-        mol2_block: coords block
+        coords_block: coords block
         fmt: format of coords block (allows: mol2, sdf, pdb)
             mol2 and sdf are loaded with discrete=1 to avoid connectivity issues
         label: name of molecule in Pymol
@@ -305,7 +305,7 @@ def load_complex_from_blocks(
     protein_block: str,
     ligand_block: Optional[str],
     protein_format: str = 'pdb',
-    ligand_format: str = 'mol2',
+    ligand_format: str = 'sdf',
     contacts: Optional[Dict[str, Any]] = None,
     weights: Optional[Dict[str, Dict[str, float]]] = None,
     label_protein: str = 'Protein_0',
@@ -325,7 +325,7 @@ def load_complex_from_blocks(
         protein_block: coords block of protein
         ligand_block (optional): coords block of ligand
         protein_format: format of protein block (default: pdb)
-        ligand_format: format of ligand block (default: mol2)
+        ligand_format: format of ligand block (default: sdf)
         contacts (optional): dict of contacts (from PLIP analysis)
         weights: dict of contact weights (from ContactScorer)
         label_protein (optional): name for protein object in Pymol
@@ -441,28 +441,27 @@ def load_complex_from_files(
 
 def load_ligand_from_block(
     label_protein: str,
-    mol2_block: str,
+    coords_block: str,
+    fmt: str = 'sdf',
     contacts: Dict = None,
     label_ligand: str = 'Mol_',
     show_binding_site_as: str = 'lines',
     state: int = 1,
 ) -> None:
-    """Loads a single MOL2 block (e.g. docking pose) to an existing Pymol session,
+    """Loads a single coords block (e.g. docking pose) to an existing Pymol session,
     with its contacts if given.
 
     Args:
         label_protein: name of protein object in Pymol (object needs to exist in current session)
-        mol2_block: MOL2 block (e.g. docking pose)
+        coords_block: block (e.g. docking pose)
+        fmt: format of coords block (allows: mol2, sdf, pdb)
         contacts (optional): dict of contacts (from PLIP analysis)
         label_ligand (optional): name for new object in Pymol
         show_binding_site_as: show binding site residues as (default: `lines`)
         state: index of the Pymol state, useful for ensemble docking
     """
     LOGGER.debug('Attempting to load a single ligand/pose')
-    if mol2_block is None:
-        LOGGER.debug('MOL2 block is None -> pass')
-        return
-    load_block(mol2_block, label=label_ligand, state=state)
+    load_block(coords_block, label=label_ligand, fmt=fmt, state=state)
     if contacts is not None:
         draw_contacts(
             contacts=contacts,

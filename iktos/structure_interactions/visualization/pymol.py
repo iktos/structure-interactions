@@ -34,7 +34,7 @@ def prepare_session_inter(
     ligand_sdf_block: Optional[str] = None,
     contacts: Optional[Dict[str, Any]] = None,
     weights: Optional[Dict[str, Dict[str, float]]] = None,
-    extra_mol2_blocks: Optional[List[str]] = None,
+    extra_sdf_blocks: Optional[List[str]] = None,
     extra_contacts: Optional[List[Dict[str, Any]]] = None,
     label_protein: str = 'Protein_0',
     label_ligand: str = 'Ligand_0',
@@ -60,7 +60,7 @@ def prepare_session_inter(
         ligand_sdf_block (optional): SDF block of reference ligand
         contacts (optional): dict with contacts for reference protein-ligand complex (from PLIP analysis)
         weights: dict of contact weights (from ContactScorer)
-        extra_mol2_blocks (optional): list of MOL2 blocks (e.g. poses from docking)
+        extra_sdf_blocks (optional): list of sdf blocks (e.g. poses from docking)
         extra_contacts (optional): list of dicts with contacts for extra protein-ligand complexes (from PLIP analysis)
         label_protein (optional): name of protein object in Pymol
         label_ligand (optional): name of ligand object in Pymol
@@ -91,17 +91,17 @@ def prepare_session_inter(
         sphere_scale=sphere_scale,
         show_binding_site_as=show_binding_site_as,
     )
-    if extra_mol2_blocks:
+    if extra_sdf_blocks:
         if not labels_extra:  # can be None or []
-            labels_extra = [f'Mol_{x}' for x in range(len(extra_mol2_blocks))]
-        for i, mol2_block in enumerate(extra_mol2_blocks):
+            labels_extra = [f'Mol_{x}' for x in range(len(extra_sdf_blocks))]
+        for i, sdf_block in enumerate(extra_sdf_blocks):
             if extra_contacts is None:
                 single_contacts_dict = None
             else:
                 single_contacts_dict = extra_contacts[i]
             load_ligand_from_block(
                 label_protein=label_protein,
-                mol2_block=mol2_block,
+                coords_block=sdf_block,
                 contacts=single_contacts_dict,
                 label_ligand=labels_extra[i],
                 show_binding_site_as=show_binding_site_as,
@@ -118,7 +118,7 @@ def prepare_session_inter_multistate(
     ligand_sdf_blocks: Optional[List[str]] = None,
     contacts: Optional[List[Dict[str, Any]]] = None,
     weights: Optional[Dict[str, Dict[str, float]]] = None,
-    extra_mol2_blocks: Optional[List[List[str]]] = None,
+    extra_sdf_blocks: Optional[List[List[str]]] = None,
     extra_contacts: Optional[List[List[Dict[str, Any]]]] = None,
     label_protein: str = 'Protein_0',
     label_ligand: str = 'Ligand_0',
@@ -145,7 +145,7 @@ def prepare_session_inter_multistate(
         ligand_sdf_blocks (optional): SDF blocks of reference ligand
         contacts (optional): list of dicts with contacts for reference protein-ligand complexes (from PLIP analysis)
         weights: dict of contact weights (from ContactScorer)
-        extra_mol2_blocks (optional): list of lists of MOL2 blocks (e.g. poses from ensemble docking)
+        extra_sdf_blocks (optional): list of lists of sdf blocks (e.g. poses from ensemble docking)
         extra_contacts (optional): list of lists of dicts with contacts for extra protein-ligand complexes (from PLIP analysis)
         label_protein (optional): name of protein object in Pymol
         label_ligand (optional): name of ligand object in Pymol
@@ -187,18 +187,18 @@ def prepare_session_inter_multistate(
             show_binding_site_as=show_binding_site_as,
             state=j + 1,
         )
-    if extra_mol2_blocks:
+    if extra_sdf_blocks:
         if not labels_extra:  # can be None or []
-            labels_extra = [f'Mol_{x}' for x in range(len(extra_mol2_blocks))]
-        for i, mol2_blocks in enumerate(extra_mol2_blocks):
-            for j, mol2_block in enumerate(mol2_blocks):
+            labels_extra = [f'Mol_{x}' for x in range(len(extra_sdf_blocks))]
+        for i, sdf_blocks in enumerate(extra_sdf_blocks):
+            for j, sdf_block in enumerate(sdf_blocks):
                 state = j + 1
                 if extra_contacts is None:
                     single_contacts_dict = None
                 else:
                     single_contacts_dict = extra_contacts[i][j]
                 load_ligand_from_block(
-                    mol2_block=mol2_block,
+                    coords_block=sdf_block,
                     contacts=single_contacts_dict,
                     label_protein=label_protein,
                     label_ligand=labels_extra[i],
