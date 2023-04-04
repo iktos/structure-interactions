@@ -75,6 +75,11 @@ def refine_hydrophobics(
     # Filter out contacts that involve an atom involved in another hydrophobic
     filter_out = []
     for h1, h2 in combinations(selection2, 2):
+        if h1 == h2:
+            raise ValueError(
+                'Your list contains exact duplicates, which is not supported '
+                '(not needed normally)'
+            )
         if h1 in filter_out or h2 in filter_out:
             continue
         h1_partners = h1.partner_1 + h1.partner_2
@@ -131,6 +136,11 @@ def refine_pi_hydrophobics(
     """
     filter_out: List[Pi_Hydrophobic] = []
     for p1, p2 in combinations(pi_hydrohobics_all, 2):
+        if p1 == p2:
+            raise ValueError(
+                'Your list contains exact duplicates, which is not supported '
+                '(not needed normally)'
+            )
         if p1 in filter_out or p2 in filter_out:
             continue
         p1_partners = p1.ring + p1.hydrophobic
@@ -233,6 +243,11 @@ def refine_h_bonds(
     # Allow only one H-bond per donor (compare strong with strong and weak with weak)
     filter_out = []
     for h1, h2 in combinations(selection3, 2):
+        if h1 == h2:
+            raise ValueError(
+                'Your list contains exact duplicates, which is not supported '
+                '(not needed normally)'
+            )
         if h1 in filter_out or h2 in filter_out:
             continue
         if h1.type != h2.type:
@@ -285,3 +300,80 @@ def refine_water_bridges(
             filter_out.append(w)
     selection = [w for w in water_bridges_all if w not in filter_out]
     return selection
+
+
+def drop_duplicated_h_bonds(
+    h_bonds_all: List[H_Bond],
+) -> List[H_Bond]:
+    """Drops duplicated H-bonds (same donor and same acceptor but different Hs).
+
+    This is needed when we allow Hs to rotate for groups like R-NH2 or R-NH3+.
+    """
+    filter_out = []
+    for h1, h2 in combinations(h_bonds_all, 2):
+        if h1 == h2:
+            raise ValueError(
+                'Your list contains exact duplicates, which is not supported '
+                '(not needed normally)'
+            )
+        if h1 in filter_out or h2 in filter_out:
+            continue
+        h1_partners = h1.acceptor + h1.donor[:1]
+        h2_partners = h2.acceptor + h2.donor[:1]
+        h1_lig_ids = {i.unique_id for i in h1_partners if 'ligand' in i.unique_id}
+        h2_lig_ids = {i.unique_id for i in h2_partners if 'ligand' in i.unique_id}
+        if h1_lig_ids != h2_lig_ids:
+            continue
+        h1_rec_ids = {i.unique_id for i in h1_partners if 'receptor' in i.unique_id}
+        h2_rec_ids = {i.unique_id for i in h2_partners if 'receptor' in i.unique_id}
+        if h1_rec_ids != h2_rec_ids:
+            continue
+        # Same donor AND same acceptor (but a different H) -> keep the H-bond
+        # with the shortest A---H distance or largest D-H---A angle if distances are similar
+        if abs(h1.distance_ah - h2.distance_ah) > 0.1:
+            h = h1 if h1.distance_ah > h2.distance_ad else h2
+        else:
+            h = h1 if h1.angle_dha < h2.angle_dha else h2
+        logger.debug(
+            'Removing H-bond (duplicate): '
+            f'{(h.acceptor[0].unique_id, h.donor[0].unique_id)}'
+        )
+        filter_out.append(h)
+    return [contact for contact in h_bonds_all if contact not in filter_out]
+
+
+def drop_duplicated_water_bridges(
+    water_bridges_all: List[Water_Bridge],
+) -> List[Water_Bridge]:
+    """Drops duplicated water bridges (same donor / acceptor / water but different Hs).
+
+    This is needed when we allow Hs to rotate for groups like R-NH2 or R-NH3+.
+    """
+    filter_out = []
+    for w1, w2 in combinations(water_bridges_all, 2):
+        if w1 == w2:
+            raise ValueError(
+                'Your list contains exact duplicates, which is not supported '
+                '(not needed normally)'
+            )
+        if w1 in filter_out or w2 in filter_out:
+            continue
+        w1_partners = w1.acceptor + w1.donor[:1] + w1.water
+        w2_partners = w2.acceptor + w2.donor[:1] + w2.water
+        w1_lig_ids = {i.unique_id for i in w1_partners if 'ligand' in i.unique_id}
+        w2_lig_ids = {i.unique_id for i in w2_partners if 'ligand' in i.unique_id}
+        if w1_lig_ids != w2_lig_ids:
+            continue
+        w1_rec_ids = {i.unique_id for i in w1_partners if 'receptor' in i.unique_id}
+        w2_rec_ids = {i.unique_id for i in w2_partners if 'receptor' in i.unique_id}
+        if w1_rec_ids != w2_rec_ids:
+            continue
+        # Same donor AND same acceptor (but a different H) -> keep the water bridge
+        # with the largest D-H---W angle
+        w = w1 if w1.angle_dhw < w2.angle_dhw else w2
+        logger.debug(
+            'Removing water bridge (duplicate): '
+            f'{(w.acceptor[0].unique_id, w.donor[0].unique_id)}'
+        )
+        filter_out.append(w)
+    return [contact for contact in water_bridges_all if contact not in filter_out]

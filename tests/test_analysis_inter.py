@@ -5,6 +5,7 @@ from iktos.structure_interactions import (
     analyse_interactions_inter_multi,
     convert_to_dict_inter,
 )
+from iktos.structure_interactions.InteractionParameters import InteractionParameters
 
 
 def test_analyse_inter_3s3m():
@@ -107,3 +108,34 @@ def test_analyse_inter_multi():
     assert len(dicts_contacts[0]["Salt_Bridge"]) == 1
     assert len(dicts_contacts[0]["Water_Bridge"]) == 1
     assert len(dicts_contacts[0]) == 6
+
+
+def test_analyse_inter_3mz9():
+    # no H-bond detected because Hs are not oriented correctly
+    protein_path = 'tests/data/prot_3MZ9.pdb'
+    ligand_path = 'tests/data/lig_3MZ9.sdf'
+    contacts_raw = analyse_interactions_inter(
+        rec_coords=protein_path,
+        lig_coords=ligand_path,
+        as_string=False,
+        refine=False,
+        lig_format='sdf',
+    )
+    dict_contacts = convert_to_dict_inter(contacts_raw)
+    assert 'H_Bond' not in dict_contacts
+
+
+def test_analyse_inter_3mz9_rotation():
+    # if we allow Hs to rotate, then we detect 2 H-bonds
+    protein_path = 'tests/data/prot_3MZ9.pdb'
+    ligand_path = 'tests/data/lig_3MZ9.sdf'
+    contacts_raw = analyse_interactions_inter(
+        rec_coords=protein_path,
+        lig_coords=ligand_path,
+        as_string=False,
+        refine=False,
+        lig_format='sdf',
+        parameters=InteractionParameters(allow_h_rotation=True),
+    )
+    dict_contacts = convert_to_dict_inter(contacts_raw)
+    assert len(dict_contacts['H_Bond']) == 2

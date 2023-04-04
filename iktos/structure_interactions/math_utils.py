@@ -8,8 +8,47 @@ except ImportError:
     from logging import getLogger
 
 import numpy as np
+import numpy.typing as npt
 
-logger = getLogger(__name__)
+LOGGER = getLogger(__name__)
+
+
+def matrix_multiply(*matrices):
+    if len(matrices) == 1:
+        return matrices
+    else:
+        m_other = matrix_multiply(*matrices[1:])
+        return np.matmul(matrices[0], m_other)
+
+
+def rotate(
+    point: npt.NDArray, axis_1: npt.NDArray, axis_2: npt.NDArray, theta: float
+) -> npt.NDArray:
+    """Rotates point around axis 1-2 by angle theta (radian)."""
+    p = [[pp] for pp in point] + [[1]]
+    x1, y1, z1 = axis_1
+    x2, y2, z2 = axis_2
+
+    U = [x2 - x1, y2 - y1, z2 - z1]
+    U = np.array(U) / np.sqrt(np.dot(U, U))
+    a, b, c = U
+    d = np.sqrt(b**2 + c**2)
+
+    T = [[1, 0, 0, -x1], [0, 1, 0, -y1], [0, 0, 1, -z1], [0, 0, 0, 1]]
+    T_inv = [[1, 0, 0, x1], [0, 1, 0, y1], [0, 0, 1, z1], [0, 0, 0, 1]]
+
+    R_x = [[1, 0, 0, 0], [0, c / d, -b / d, 0], [0, b / d, c / d, 0], [0, 0, 0, 1]]
+    R_x_inv = [[1, 0, 0, 0], [0, c / d, b / d, 0], [0, -b / d, c / d, 0], [0, 0, 0, 1]]
+
+    R_y = [[d, 0, -a, 0], [0, 1, 0, 0], [a, 0, d, 0], [0, 0, 0, 1]]
+    R_y_inv = [[d, 0, a, 0], [0, 1, 0, 0], [-a, 0, d, 0], [0, 0, 0, 1]]
+
+    ct = np.cos(theta)
+    st = np.sin(theta)
+    R_z = [[ct, st, 0, 0], [-st, ct, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+
+    p2 = matrix_multiply(T_inv, R_x_inv, R_y_inv, R_z, R_y, R_x, T, p)
+    return p2[0][:3].T[0]
 
 
 def get_euclidean_distance_3d(v1, v2):
@@ -35,7 +74,7 @@ def get_vector(p1, p2):
         Numpy array with vector coordinates.
     """
     if not (len(p1) == 3 and len(p2) == 3):
-        logger.error(f'Invalid vector format: {p1}, {p2}')
+        LOGGER.error(f'Invalid vector format: {p1}, {p2}')
         raise ValueError()
     return (
         None

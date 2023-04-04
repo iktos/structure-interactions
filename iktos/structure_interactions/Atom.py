@@ -32,6 +32,7 @@ class Atom:
             self.atom_name = obatom.GetResidue().GetAtomID(obatom).strip(' ')
         self.is_aromatic = obatom.IsAromatic()
         self.hybridisation = obatom.GetHyb()
+        self.heavy_degree = obatom.GetHvyDegree()
 
         # Get info relative to residue - for ligands, the residue might not exist
         # (especially if input format is SDF) so we assign generic descriptors

@@ -8,13 +8,16 @@ class InteractionParameters:
     Attributes:
         bs_dist: max dist to include binding site residues (default=7.5)
         min_dist: min dist for all distance thresholds (default=2.0)
+        allow_h_rotation: whether to allow rotation of rotatable H-bond pairs (R-OH, R-NH2,
+            default: False). Affects the detection of H-bonds and water bridges.
+            If True, alternative locations of these Hs will be tried.
         hydrophobic_dist_max: max dist for detection of hydrophobic contacts (default=4.0)
         hbond_dist_max: max dist between d and a (hubbard & haider, 2001) + 0.5 a (default=4.0)
         hbond_don_angle_min: minimal angle for d-h-a (default=140)
-        hbond_acc_angle_min: minimal angle for each h-a-y, where y are a's neighbours (custom) (default=100)
+        hbond_acc_angle_min: minimal angle for each h-a-y, where y are a's neighbours (custom, default=90)
         xbond_dist_max: max dist between a and x (ref + 0.5) (default=4.0)
         xbond_don_angle_min: minimal angle for c-x-a (default=140)
-        xbond_acc_angle_min: minimal angle for each x-a-y, where y are a's neighbours (custom) (default=90)
+        xbond_acc_angle_min: minimal angle for each x-a-y, where y are a's neighbours (custom, default=90)
         multipolar_dist_max: max dist between a and x (default=4.0)
         multipolar_don_angle_min: minimal angle for c-x-a (default=90)
         multipolar_norm_angle_max: max angle for c-x--camide (default=40)
@@ -51,6 +54,7 @@ class InteractionParameters:
 
     bs_dist: float = 7.5
     min_dist: float = 2.0
+    allow_h_rotation: bool = False
 
     # hydrophobic interactions
     hydrophobic_dist_max: float = 4.0

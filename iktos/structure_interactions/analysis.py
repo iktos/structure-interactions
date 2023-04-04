@@ -22,6 +22,8 @@ from .InteractionParameters import InteractionParameters
 from .Ligand import Ligand
 from .Receptor import Receptor
 from .refinement import (
+    drop_duplicated_h_bonds,
+    drop_duplicated_water_bridges,
     refine_h_bonds,
     refine_hydrophobics,
     refine_pi_cations,
@@ -115,6 +117,7 @@ def _detect_interactions_inter(
         distance_max=parameters.hbond_dist_max,
         donor_angle_min=parameters.hbond_don_angle_min,
         acceptor_angle_min=parameters.hbond_acc_angle_min,
+        allow_h_rotation=parameters.allow_h_rotation,
     ) + find_h_bonds(
         acceptors=lig.h_bond_acceptors,
         donor_pairs=rec.h_bond_donors + rec.water_h_bond_donors,
@@ -122,7 +125,12 @@ def _detect_interactions_inter(
         distance_max=parameters.hbond_dist_max,
         donor_angle_min=parameters.hbond_don_angle_min,
         acceptor_angle_min=parameters.hbond_acc_angle_min,
+        allow_h_rotation=parameters.allow_h_rotation,
     )
+    if parameters.allow_h_rotation:
+        # Drop duplicated H-bonds for e.g. R-NH2 (in cases like this,
+        # both Hs can be detected in interaction with the same acceptor)
+        h_bonds_all = drop_duplicated_h_bonds(h_bonds_all)
     LOGGER.debug(f'Found {len(h_bonds_all)} H-bond(s)')
 
     x_bonds_all = find_x_bonds(
@@ -163,6 +171,7 @@ def _detect_interactions_inter(
         omega_max=parameters.water_bridge_omega_max,
         hbond_acceptor_angle_min=parameters.hbond_acc_angle_min,
         hbond_donor_angle_min=parameters.hbond_don_angle_min,
+        allow_h_rotation=parameters.allow_h_rotation,
     ) + find_water_bridges(
         acceptors=lig.h_bond_acceptors,
         donor_pairs=rec.h_bond_donors,
@@ -173,7 +182,12 @@ def _detect_interactions_inter(
         omega_max=parameters.water_bridge_omega_max,
         hbond_acceptor_angle_min=parameters.hbond_acc_angle_min,
         hbond_donor_angle_min=parameters.hbond_don_angle_min,
+        allow_h_rotation=parameters.allow_h_rotation,
     )
+    if parameters.allow_h_rotation:
+        # Drop duplicated water bridges for e.g. R-NH2 (in cases like this,
+        # both Hs can be detected in interaction with the same acceptor)
+        water_bridges_all = drop_duplicated_water_bridges(water_bridges_all)
     LOGGER.debug(f'Found {len(water_bridges_all)} water bridge(s)')
 
     metal_complexes = find_metal_complexes(
@@ -291,7 +305,12 @@ def _detect_interactions_intra(
         distance_max=parameters.hbond_dist_max,
         donor_angle_min=parameters.hbond_don_angle_min,
         acceptor_angle_min=parameters.hbond_acc_angle_min,
+        allow_h_rotation=parameters.allow_h_rotation,
     )
+    if parameters.allow_h_rotation:
+        # Drop duplicated H-bonds for e.g. R-NH2 (in cases like this,
+        # both Hs can be detected in interaction with the same acceptor)
+        hbonds = drop_duplicated_h_bonds(hbonds)
     LOGGER.debug(f'Found {len(hbonds)} H-bond(s)')
 
     salt_bridges = find_salt_bridges(

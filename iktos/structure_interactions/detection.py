@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from itertools import product
-from typing import List, NamedTuple
+from typing import Any, List, NamedTuple, Tuple
 
 try:
     from iktos.logger import getLogger
@@ -62,12 +62,14 @@ def find_hydrophobics(
         # Ignore interactions between aromatic atoms
         if partner_1.atom_list[0].is_aromatic and partner_2.atom_list[0].is_aromatic:
             continue
+
         # Check distance
         dist = get_euclidean_distance_3d(
             partner_1.atom_list[0].coords, partner_2.atom_list[0].coords
         )
         if not distance_min <= dist <= distance_max:
             continue
+
         # If the same contact has already been seen (only relevant for intra), pass
         if any(
             [
@@ -77,11 +79,13 @@ def find_hydrophobics(
             ]
         ):
             continue
+
         # If atoms are bound (up to 3 bonds apart, relevant for intra), pass
         ids_1 = [atom.unique_id for atom in partner_1.neighbours_radius_2]
         ids_2 = [atom.unique_id for atom in partner_2.neighbours_radius_2]
         if any([i in ids_2 for i in ids_1]):
             continue
+
         # Save contact
         contact = Hydrophobic(
             partner_1=partner_1.atom_list, partner_2=partner_2.atom_list, distance=dist
@@ -134,6 +138,7 @@ def find_pi_stackings(
         dist = get_euclidean_distance_3d(ring_1.center, ring_2.center)
         if not distance_min <= dist <= distance_max_t:
             continue
+
         # Take the smallest of two angles, depending on direction of normal
         angle_tmp = get_vector_angle(ring_1.normal, ring_2.normal)
         angle = min(angle_tmp, 180 - angle_tmp)
@@ -145,6 +150,7 @@ def find_pi_stackings(
             type = 'F'
         else:
             continue
+
         # Project each ring center onto the other ring and calculate offset
         proj1 = project_on_plane(ring_1.normal, ring_1.center, ring_2.center)
         proj2 = project_on_plane(ring_2.normal, ring_2.center, ring_1.center)
@@ -153,11 +159,12 @@ def find_pi_stackings(
             get_euclidean_distance_3d(proj2, ring_2.center),
         )
         if not offset <= offset_max:
-            logger.debug(
-                f'Pi-staking ignored due to large offset {round(offset, 1)}, '
-                f'angle {round(angle, 1)}, distance {round(dist, 1)}'
-            )
+            # logger.debug(
+            #     f'Pi-staking ignored due to large offset ({round(offset, 1)}, '
+            #     f'angle {round(angle, 1)}, distance {round(dist, 1)})'
+            # )
             continue
+
         # If the same contact has already been seen (only relevant for intra), pass
         if any(
             [
@@ -167,11 +174,13 @@ def find_pi_stackings(
             ]
         ):
             continue
+
         # If the rings share any atom (only relevant for intra), pass
         ids_1 = [atom.unique_id for atom in ring_1.atom_list]
         ids_2 = [atom.unique_id for atom in ring_2.atom_list]
         if any([i in ids_2 for i in ids_1]):
             continue
+
         # Save contact
         contact = Pi_Stacking(
             partner_1=ring_1.atom_list,
@@ -221,15 +230,17 @@ def find_pi_amides(
         dist = get_euclidean_distance_3d(ring.center, pi_carbon.center)
         if not distance_min <= dist <= distance_max:
             continue
+
         # Take the smallest of two angles, depending on direction of normal
         angle_tmp = get_vector_angle(ring.normal, pi_carbon.normal)
         angle = min(angle_tmp, 180 - angle_tmp)
         if not 0 <= angle <= angle_dev:
-            logger.debug(
-                f'Pi-amide ignored due to large angle {round(angle, 1)}, '
-                f'distance {round(dist, 1)}'
-            )
+            # logger.debug(
+            #     f'Pi-amide ignored due to large angle ({round(angle, 1)}, '
+            #     f'distance {round(dist, 1)})'
+            # )
             continue
+
         # Project each ring center onto the other ring and calculate offset
         proj1 = project_on_plane(pi_carbon.normal, pi_carbon.center, ring.center)
         proj2 = project_on_plane(ring.normal, ring.center, pi_carbon.center)
@@ -238,11 +249,12 @@ def find_pi_amides(
             get_euclidean_distance_3d(proj2, ring.center),
         )
         if not offset <= offset_max:
-            logger.debug(
-                f'Pi-amide ignored due to large offset {round(offset, 1)}, '
-                f'angle {round(angle, 1)}, distance {round(dist, 1)}'
-            )
+            # logger.debug(
+            #     f'Pi-amide ignored due to large offset ({round(offset, 1)}, '
+            #     f'angle {round(angle, 1)}, distance {round(dist, 1)})'
+            # )
             continue
+
         # Save contact
         contact = Pi_Amide(
             ring=ring.atom_list,
@@ -286,19 +298,22 @@ def find_pi_cations(
     for r, c in product(rings, charged_atoms):
         if c.charge != 'positive':
             continue
+
         # Check distance
         dist = get_euclidean_distance_3d(r.center, c.center)
         if not distance_min <= dist <= distance_max:
             continue
+
         # Project the center of charge onto the ring and measure distance to ring center
         proj = project_on_plane(r.normal, r.center, c.center)
         offset = get_euclidean_distance_3d(proj, r.center)
         if not offset <= offset_max:
-            logger.debug(
-                f'Pi-cation ignored due to large offset {round(offset, 1)}, '
-                f'distance {round(dist, 1)}'
-            )
+            # logger.debug(
+            #     f'Pi-cation ignored due to large offset ({round(offset, 1)}, '
+            #     f'distance {round(dist, 1)})'
+            # )
             continue
+
         # Save contact
         contact = Pi_Cation(
             ring=r.atom_list, cation=c.atom_list, distance=dist, offset=offset
@@ -338,25 +353,103 @@ def find_pi_hydrophobics(
     for r, h in product(rings, hydrophobics):
         if h.atom_list[0].hybridisation != 3:
             continue
+
         # Check distance
         dist = get_euclidean_distance_3d(r.center, h.atom_list[0].coords)
         if not distance_min <= dist <= distance_max:
             continue
+
         # Project the hydrophobic atom onto ring and measure distance to ring center
         proj = project_on_plane(r.normal, r.center, h.atom_list[0].coords)
         offset = get_euclidean_distance_3d(proj, r.center)
         if not offset <= offset_max:
-            logger.debug(
-                f'Pi-hydrophobic ignored due to large offset {round(offset, 1)}, '
-                f'distance {round(dist, 1)}'
-            )
+            # logger.debug(
+            #     f'Pi-hydrophobic ignored due to large offset ({round(offset, 1)}, '
+            #     f'distance {round(dist, 1)})'
+            # )
             continue
+
         # Save contact
         contact = Pi_Hydrophobic(
             hydrophobic=h.atom_list, ring=r.atom_list, distance=dist, offset=offset
         )
         pairings.append(contact)
     return pairings
+
+
+def _check_angle_H(
+    acc: Any,
+    don: HBondDonor,
+    donor_angle_min: float,
+    allow_h_rotation: bool,
+) -> Tuple[bool, float, float]:
+    """Checks angle A---H-D (angle around H).
+
+    Returns:
+        bool (True if angle around H is OK, False otherwise),
+        distance H--A,
+        angle D-H---A
+    """
+    vec_hd = get_vector(don.atom_list[1].coords, don.atom_list[0].coords)
+    vec_ha = get_vector(don.atom_list[1].coords, acc.atom_list[0].coords)
+    angle_dha = get_vector_angle(vec_hd, vec_ha)
+    if not angle_dha >= donor_angle_min:
+        if not allow_h_rotation or not don.alt_locations:
+            # logger.debug(
+            #     f'H-bond ignored due to small D-H--A angle ({round(angle_dha, 1)})'
+            # )
+            return False, 0, 0
+
+        # Try other positions for H and see whether any of them makes an H-bond
+        for alt_location in don.alt_locations:
+            vec_hd = get_vector(alt_location, don.atom_list[0].coords)
+            vec_ha = get_vector(alt_location, acc.atom_list[0].coords)
+            angle_dha = get_vector_angle(vec_hd, vec_ha)
+            if angle_dha >= donor_angle_min:
+                logger.debug(
+                    'Found an alternative H position with a valid D-H--A angle'
+                )
+                dist_ah = get_euclidean_distance_3d(
+                    acc.atom_list[0].coords, alt_location
+                )
+                return True, dist_ah, angle_dha
+        return False, 0, 0
+
+    dist_ah = get_euclidean_distance_3d(
+        acc.atom_list[0].coords, don.atom_list[1].coords
+    )
+    return True, dist_ah, angle_dha
+
+
+def _check_angle_acceptor(
+    acc: Any,
+    don: Any,
+    acceptor_angle_min: float,
+    allow_h_rotation: bool,
+) -> bool:
+    """Checks angles Y-A---D around the acceptor (where Y are the neighbours of A)."""
+    angle_ok = True
+    for y in acc.neighbours:
+        # If `allow_h_rotation` is True, we don't want to check the angle
+        # with a neighbouring H if it is rotatable (R-OH, R-NH2)
+        if (
+            allow_h_rotation
+            and acc.atom_list[0].hybridisation == 3
+            and acc.atom_list[0].heavy_degree == 1
+            and y.atomic_num == 1
+        ):
+            continue
+
+        vec_ay = get_vector(acc.atom_list[0].coords, y.coords)
+        vec_ad = get_vector(acc.atom_list[0].coords, don.atom_list[0].coords)
+        angle_yad = get_vector_angle(vec_ay, vec_ad)
+        if not angle_yad >= acceptor_angle_min:
+            angle_ok = False
+            # logger.debug(
+            #     f'Interaction ignored due to small Y-A--D angle ({round(angle_yad, 1)})'
+            # )
+            break
+    return angle_ok
 
 
 class H_Bond(NamedTuple):
@@ -375,6 +468,7 @@ def find_h_bonds(
     distance_max: float = 4.0,
     donor_angle_min: float = 140.0,
     acceptor_angle_min: float = 100.0,
+    allow_h_rotation: bool = False,
 ) -> List[H_Bond]:
     """Detects H-bonds between acceptors and donor pairs.
 
@@ -390,6 +484,8 @@ def find_h_bonds(
         distance_max: distance max (default: 4.0 Ang).
         donor_angle_min: min angle D-H-A (default: 140 deg).
         acceptor_angle_min: min angle Y-A-D (default: 100 deg).
+        allow_h_rotation: whether to allow rotation of rotatable H-bond pairs (R-OH, R-NH2,
+            default: False). If True, alternative locations of the H will be tried.
 
     Returns:
         list of detected interactions.
@@ -403,31 +499,27 @@ def find_h_bonds(
         )
         if not distance_min <= dist_ad <= distance_max:
             continue
+
         # Check angle around H
-        vec_hd = get_vector(d.atom_list[1].coords, d.atom_list[0].coords)
-        vec_ha = get_vector(d.atom_list[1].coords, a.atom_list[0].coords)
-        angle_dha = get_vector_angle(vec_hd, vec_ha)
-        if not angle_dha >= donor_angle_min:
-            logger.debug(
-                f'H-bond ignored due to small D-H--A angle {round(angle_dha, 1)}, '
-                f'distance {round(dist_ad, 1)}'
-            )
-            continue
-        # Check acceptor angle
-        angle_ok = True
-        for y in a.neighbours:
-            vec_ay = get_vector(a.atom_list[0].coords, y.coords)
-            vec_ad = get_vector(a.atom_list[0].coords, d.atom_list[0].coords)
-            angle_yad = get_vector_angle(vec_ay, vec_ad)
-            if not angle_yad >= acceptor_angle_min:
-                angle_ok = False
-                logger.debug(
-                    f'H-bond ignored due to small Y-A--D angle {round(angle_yad, 1)}, '
-                    f'distance {round(dist_ad, 1)}'
-                )
-                break
+        angle_ok, dist_ah, angle_dha = _check_angle_H(
+            acc=a,
+            don=d,
+            donor_angle_min=donor_angle_min,
+            allow_h_rotation=allow_h_rotation,
+        )
         if not angle_ok:
             continue
+
+        # Check angles around the acceptor
+        angle_ok = _check_angle_acceptor(
+            acc=a,
+            don=d,
+            acceptor_angle_min=acceptor_angle_min,
+            allow_h_rotation=allow_h_rotation,
+        )
+        if not angle_ok:
+            continue
+
         # Save contact
         dist_ah = get_euclidean_distance_3d(
             a.atom_list[0].coords, d.atom_list[1].coords
@@ -483,35 +575,33 @@ def find_x_bonds(
         # Exclude F
         if d.atom_list[1].atomic_num == 9:
             continue
+
         # Check distance
         dist = get_euclidean_distance_3d(a.atom_list[0].coords, d.atom_list[1].coords)
         if not distance_min <= dist <= distance_max:
             continue
+
         # Check angle around X
         vec_xa = get_vector(d.atom_list[1].coords, a.atom_list[0].coords)
         vec_xd = get_vector(d.atom_list[1].coords, d.atom_list[0].coords)
         angle_axd = get_vector_angle(vec_xa, vec_xd)
         if not angle_axd >= donor_angle_min:
-            logger.debug(
-                f'X-bond ignored due to small A--X-D angle {round(angle_axd, 1)}, '
-                f'distance {round(dist, 1)}'
-            )
+            # logger.debug(
+            #     f'X-bond ignored due to small A--X-D angle ({round(angle_axd, 1)}, '
+            #     f'distance {round(dist, 1)})'
+            # )
             continue
+
         # Check acceptor angles
-        angle_ok = True
-        for y in a.neighbours:
-            vec_ay = get_vector(a.atom_list[0].coords, y.coords)
-            vec_ax = get_vector(a.atom_list[0].coords, d.atom_list[1].coords)
-            angle_yax = get_vector_angle(vec_ay, vec_ax)
-            if not angle_yax >= acceptor_angle_min:
-                angle_ok = False
-                logger.debug(
-                    f'X-bond ignored due to small Y-A--X angle {round(angle_yax, 1)}, '
-                    f'distance {round(dist, 1)}'
-                )
-                break
+        angle_ok = _check_angle_acceptor(
+            acc=a,
+            don=d,
+            acceptor_angle_min=acceptor_angle_min,
+            allow_h_rotation=False,
+        )
         if not angle_ok:
             continue
+
         # Save contact
         contact = Halogen_Bond(
             donor=d.atom_list,
@@ -563,29 +653,31 @@ def find_multpipolar_interactions(
         # Exclude Br and I
         if d.atom_list[1].atomic_num not in [9, 17]:
             continue
+
         # Check distance
         dist = get_euclidean_distance_3d(a.atom_list[0].coords, d.atom_list[1].coords)
         if not distance_min <= dist <= distance_max:
             continue
+
         # Check angle around X
         vec_xa = get_vector(d.atom_list[1].coords, a.atom_list[0].coords)
         vec_xd = get_vector(d.atom_list[1].coords, d.atom_list[0].coords)
         angle_axd = get_vector_angle(vec_xa, vec_xd)
         if not angle_axd >= donor_angle_min:
-            logger.debug(
-                f'Multipolar ignored due to small A--X-D angle {round(angle_axd, 1)}, '
-                f'distance {round(dist, 1)}'
-            )
+            # logger.debug(
+            #     f'Multipolar ignored due to small A--X-D angle ({round(angle_axd, 1)})'
+            # )
             continue
+
         # Take the smallest of two angles, depending on direction of normal
         angle_tmp = get_vector_angle(a.normal, vec_xa)
         angle_xay = min(angle_tmp, 180 - angle_tmp)
         if not 0 <= angle_xay <= norm_angle_max:
-            logger.debug(
-                f'Multipolar ignored due to large X--A-Y angle {round(angle_xay, 1)}, '
-                f'distance {round(dist, 1)}'
-            )
+            # logger.debug(
+            #     f'Multipolar ignored due to large X--A-Y angle ({round(angle_xay, 1)})'
+            # )
             continue
+
         # Save contact
         contact = Multipolar(
             donor=d.atom_list,
@@ -625,10 +717,12 @@ def find_salt_bridges(
     for group_1, group_2 in product(charged_atoms_1, charged_atoms_2):
         if group_1.charge == group_2.charge:
             continue
+
         # Check distance
         dist = get_euclidean_distance_3d(group_1.center, group_2.center)
         if not distance_min <= dist <= distance_max:
             continue
+
         # If the same contact has already been seen (only relevant for intra), pass
         if any(
             [
@@ -638,6 +732,7 @@ def find_salt_bridges(
             ]
         ):
             continue
+
         # Save contact
         contact = Salt_Bridge(
             partner_1=group_1.atom_list, partner_2=group_2.atom_list, distance=dist
@@ -666,6 +761,7 @@ def find_water_bridges(
     omega_max: float = 140,
     hbond_acceptor_angle_min: float = 100,
     hbond_donor_angle_min: float = 140,
+    allow_h_rotation: bool = False,
 ) -> List[Water_Bridge]:
     """Detects water-bridged hydrogen bonds between ligand and protein
 
@@ -683,6 +779,8 @@ def find_water_bridges(
         omega_max: max angle between A, OW and D hydrogen (default: 140 deg).
         hbond_donor_angle_min: min angle D-H-A (default: 140 deg).
         hbond_acceptor_angle_min: min angle Y-A-D (default: 100 deg).
+        allow_h_rotation: whether to allow rotation of rotatable H-bond pairs (R-OH, R-NH2,
+            default: False). If True, alternative locations of the H will be tried.
 
     Returns:
         list of detected interactions.
@@ -704,43 +802,38 @@ def find_water_bridges(
             )
             if not distance_min <= dist_dw <= distance_max:
                 continue
+
             # Check angle around acceptor
-            angle_ok = True
-            for y in a.neighbours:
-                vec_ay = get_vector(a.atom_list[0].coords, y.coords)
-                vec_ao = get_vector(a.atom_list[0].coords, w.atom_list[0].coords)
-                angle_yao = get_vector_angle(
-                    vec_ay, vec_ao
-                )  # angle with O_wat instead of H_wat
-                if not angle_yao >= hbond_acceptor_angle_min:
-                    angle_ok = False
-                    logger.debug(
-                        f'Water bridge ignored due to small Y-A--OW angle {round(angle_yao, 1)}, '
-                        f'distance {round(dist_aw, 1)} and {round(dist_dw, 1)}'
-                    )
-                    break
+            angle_ok = _check_angle_acceptor(
+                acc=a,
+                don=w,
+                acceptor_angle_min=hbond_acceptor_angle_min,
+                allow_h_rotation=allow_h_rotation,
+            )
             if not angle_ok:
                 continue
+
             # Check angle around H
-            vec_hd = get_vector(d.atom_list[1].coords, d.atom_list[0].coords)
-            vec_hw = get_vector(d.atom_list[1].coords, w.atom_list[0].coords)
-            angle_dhw = get_vector_angle(vec_hd, vec_hw)
-            if not angle_dhw >= hbond_donor_angle_min:
-                logger.debug(
-                    f'Water bridge ignored due to small D-H--OW angle {round(angle_dhw, 1)}, '
-                    f'distance {round(dist_aw, 1)} and {round(dist_dw, 1)}'
-                )
+            angle_ok, _, angle_dhw = _check_angle_H(
+                acc=w,
+                don=d,
+                donor_angle_min=hbond_donor_angle_min,
+                allow_h_rotation=allow_h_rotation,
+            )
+            if not angle_ok:
                 continue
+
             # Check angle around OW
             vec_wa = get_vector(w.atom_list[0].coords, a.atom_list[0].coords)
             vec_wh = get_vector(w.atom_list[0].coords, d.atom_list[1].coords)
             angle_awh = get_vector_angle(vec_wa, vec_wh)
             if not (omega_min <= angle_awh <= omega_max):
-                logger.debug(
-                    f'Water bridge ignored due to invalid A--OW--H angle {round(angle_awh, 1)}, '
-                    f'distance {round(dist_aw, 1)} and {round(dist_dw, 1)}'
-                )
+                # logger.debug(
+                #     f'Water bridge ignored due to invalid A--OW--H angle ({round(angle_awh, 1)}, '
+                #     f'distance {round(dist_aw, 1)} and {round(dist_dw, 1)})'
+                # )
                 continue
+
             # Save contacts
             contact = Water_Bridge(
                 acceptor=a.atom_list,
@@ -790,6 +883,7 @@ def find_metal_complexes(
     """
     pairings: List[Metal_Complex] = []
     pairings_dict = {}  # type: dict
+
     # List possible pairs
     for metal, binder in product(metals, metal_binders):
         dist = get_euclidean_distance_3d(
@@ -802,6 +896,7 @@ def find_metal_complexes(
         if metal_id not in pairings_dict:
             pairings_dict[metal_id] = []
         pairings_dict[metal_id].append((metal, binder))
+
     # Save relevant contacts
     for i, (metal_id, contact_pairs) in enumerate(pairings_dict.items()):
         logger.debug(f'Looking at metal: {metal_id}')

@@ -10,6 +10,8 @@ from iktos.structure_interactions.detection import (
     Water_Bridge,
 )
 from iktos.structure_interactions.refinement import (
+    drop_duplicated_h_bonds,
+    drop_duplicated_water_bridges,
     refine_h_bonds,
     refine_hydrophobics,
     refine_pi_cations,
@@ -344,7 +346,7 @@ def test_refine_pi_hydrophobics_4():
 
 
 def test_refine_water_bridges_1():
-    # Water bridge + metal complex -> drop water bridge
+    # water bridge + metal complex -> drop water bridge
     water_bridge = Water_Bridge(
         acceptor=[Atom(unique_id='ligand|UNL|A|1|1')],
         donor=[Atom(unique_id='receptor|LEU|A|1|O')],
@@ -363,3 +365,51 @@ def test_refine_water_bridges_1():
     )
     selection = refine_water_bridges([water_bridge], [metal_complex])
     assert len(selection) == 0
+
+
+def test_drop_duplicated_h_bonds():
+    # duplicated H-bonds (differ by H only), keep the 2nd one (shorter A---H distance)
+    hbond_1 = H_Bond(
+        donor=[Atom(unique_id='ligand|UNL|A|1|1'), Atom(unique_id='ligand|UNL|A|1|2')],
+        acceptor=[Atom(unique_id='receptor|SER|A|1|OG')],
+        distance_ah=3.5,
+        distance_ad=0.,  # not used
+        angle_dha=150,
+        type='strong',
+    )
+    hbond_2 = H_Bond(
+        donor=[Atom(unique_id='ligand|UNL|A|1|1'), Atom(unique_id='ligand|UNL|A|1|3')],  # change H
+        acceptor=[Atom(unique_id='receptor|SER|A|1|OG')],
+        distance_ah=3.0,
+        distance_ad=0.,  # not used
+        angle_dha=160,
+        type='strong',
+    )
+    hbonds_filtered = drop_duplicated_h_bonds([hbond_1, hbond_2])
+    assert len(hbonds_filtered) == 1
+    assert hbonds_filtered[0] == hbond_2
+
+
+def test_drop_duplicated_water_bridges():
+    # duplicated water bridges (differ by H only), keep the 2nd one (larger D-H---W angle)
+    water_bridge_1 = Water_Bridge(
+        acceptor=[Atom(unique_id='ligand|UNL|A|1|1')],
+        donor=[Atom(unique_id='receptor|LYS|A|1|NZ'), Atom(unique_id='receptor|LYS|A|1|HZ1')],
+        water=[Atom(unique_id='receptor|SOL|A|7|OW')],
+        distance_aw=0.,  # not used
+        distance_dw=0.,  # not used
+        angle_dhw=150.,
+        angle_awh=0.,  # not used
+    )
+    water_bridge_2 = Water_Bridge(
+        acceptor=[Atom(unique_id='ligand|UNL|A|1|1')],
+        donor=[Atom(unique_id='receptor|LYS|A|1|NZ'), Atom(unique_id='receptor|LYS|A|1|HZ2')],
+        water=[Atom(unique_id='receptor|SOL|A|7|OW')],
+        distance_aw=0.,  # not used
+        distance_dw=0.,  # not used
+        angle_dhw=160.,
+        angle_awh=0.,  # not used
+    )
+    water_bridges_filtered = drop_duplicated_water_bridges([water_bridge_1, water_bridge_2])
+    assert len(water_bridges_filtered) == 1
+    assert water_bridges_filtered[0] == water_bridge_2

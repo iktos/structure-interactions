@@ -443,7 +443,7 @@ def load_ligand_from_block(
     label_protein: str,
     coords_block: str,
     fmt: str = 'sdf',
-    contacts: Dict = None,
+    contacts: Optional[Dict] = None,
     label_ligand: str = 'Mol_',
     show_binding_site_as: str = 'lines',
     state: int = 1,

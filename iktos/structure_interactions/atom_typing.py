@@ -1,3 +1,4 @@
+import math
 from builtins import filter
 from typing import List, NamedTuple
 
@@ -28,7 +29,7 @@ except ModuleNotFoundError:
 
 from . import constants
 from .Atom import Atom
-from .math_utils import get_centroid, get_vector, normalize_vector
+from .math_utils import get_centroid, get_vector, normalize_vector, rotate
 from .mol_utils import (
     atom_has_lone_pair,
     get_atom_coordinates,
@@ -161,7 +162,8 @@ class HBondAcceptor(NamedTuple):
 
     Attributes:
         atom_list: H-bond acceptor atom (in a list to be consistent with other classes).
-        neighbours: list of neighbouring atoms (needed to check the angles around A).
+        neighbours: list of neighbouring atoms (needed to check the angles around A
+            and ensure that the H is on the lone pair side).
     """
 
     atom_list: List[Atom]
@@ -171,7 +173,10 @@ class HBondAcceptor(NamedTuple):
 def find_h_bond_acceptors(obatoms: List[OBAtom]) -> List[HBondAcceptor]:
     """Finds all H-bond acceptors.
 
-    Halogens and sulfur are NOT considered as H-bond accpetors.
+    Halogens and sulfur are NOT considered as H-bond acceptors.
+
+    Neighbours of the acceptor are listed as well and are used in the code
+    to make shure H-bonds are detected on the lone pair side.
     """
     selection = []
     obatoms_filtered = filter(
@@ -183,7 +188,8 @@ def find_h_bond_acceptors(obatoms: List[OBAtom]) -> List[HBondAcceptor]:
         obneighs = list(OBAtomAtomIter(obatom))
         selection.append(
             HBondAcceptor(
-                atom_list=[Atom(obatom)], neighbours=[Atom(a) for a in obneighs]
+                atom_list=[Atom(obatom)],
+                neighbours=[Atom(a) for a in obneighs],
             )
         )
     logger.debug(f'Found {len(selection)} H-bond acceptors')
@@ -196,31 +202,74 @@ class HBondDonor(NamedTuple):
     Attributes:
         atom_list: H-bond donor pair (D, H).
         type: weak or strong.
+        alt_locations: alternative locations of H (only for e.g. R-OH, R-NH2, R-NH3+).
     """
 
     atom_list: List[Atom]
     type: str
+    alt_locations: List[npt.NDArray]
 
 
 def find_h_bond_donors(obatoms: List[OBAtom]) -> List[HBondDonor]:
-    """Finds all strong and weak H-bond donors (i.e. with polarised C-H bonds)."""
+    """Finds all strong and weak H-bond donors (i.e. with polarised C-H bonds).
+
+    For strong rotatable H-bond donors (R-OH, R-NH2), alternative positions
+    of H are added to the object `HBondDonor`.
+    """
     selection = []
+
     # Loop over atoms flagged by OpenBabel as H-bond donor
     obatoms_filtered = filter(lambda obatom: obatom.IsHbondDonor(), obatoms)
     for obatom in obatoms_filtered:
-        for obneigh in OBAtomAtomIter(obatom):
-            if obneigh.IsHbondDonorH():
-                selection.append(
-                    HBondDonor(atom_list=[Atom(obatom), Atom(obneigh)], type='strong')
+        # Loop over Hs bonded to this H-bond donor
+        obneighs_h = [
+            obneigh for obneigh in OBAtomAtomIter(obatom) if obneigh.GetAtomicNum() == 1
+        ]
+        for i, obneigh in enumerate(obneighs_h):
+            alt_locations = []
+
+            # If the H-bond donor is e.g. OH or NH2, consider alternative locations
+            if obatom.GetHyb() == 3 and obatom.GetHvyDegree() == 1:
+                logger.debug(
+                    'Identified a rotatable H-bond donor in residue '
+                    f'{obatom.GetResidue().GetName()}|{obatom.GetResidue().GetNum()}'
                 )
+                coords_h_initial = get_atom_coordinates(obneigh)
+                obneighs_not_h = [
+                    obneigh
+                    for obneigh in OBAtomAtomIter(obatom)
+                    if obneigh.GetAtomicNum() != 1
+                ]
+                coords_neigh = get_atom_coordinates(obneighs_not_h[0])
+                coords_donor = get_atom_coordinates(obatom)
+                for angle in np.arange(30, 360, 30):
+                    coords_h_final = rotate(
+                        coords_h_initial,
+                        coords_donor,
+                        coords_neigh,
+                        math.radians(angle),
+                    )
+                    alt_locations.append(coords_h_final)
+            selection.append(
+                HBondDonor(
+                    atom_list=[Atom(obatom), Atom(obneigh)],
+                    type='strong',
+                    alt_locations=alt_locations,
+                )
+            )
     logger.debug(f'Found {len(selection)} strong H-bond donor pairs')
+
     # Find polarised C-H (near O, or near N, or SP2 or SP) and S-H
     for obatom in obatoms:
         if obatom.GetAtomicNum() == 16:
             obhs = get_h_neighbours(obatom)
             for obh in obhs:
                 selection.append(
-                    HBondDonor(atom_list=[Atom(obatom), Atom(obh)], type='weak')
+                    HBondDonor(
+                        atom_list=[Atom(obatom), Atom(obh)],
+                        type='weak',
+                        alt_locations=[],
+                    )
                 )
         elif obatom.GetAtomicNum() == 6:
             obhs = get_h_neighbours(obatom)
@@ -231,7 +280,11 @@ def find_h_bond_donors(obatoms: List[OBAtom]) -> List[HBondDonor]:
             if obatom.GetHyb() in [1, 2] or len(list(obneighs_filtered)) != 0:
                 for obh in obhs:
                     selection.append(
-                        HBondDonor(atom_list=[Atom(obatom), Atom(obh)], type='weak')
+                        HBondDonor(
+                            atom_list=[Atom(obatom), Atom(obh)],
+                            type='weak',
+                            alt_locations=[],
+                        )
                     )
     logger.debug(f'Found {len(selection)} H-bond donor pairs (incl. weak)')
     return selection
