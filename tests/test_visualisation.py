@@ -6,7 +6,10 @@ Proprietary and confidential
 
 import json
 import os
+import pytest
 import re
+
+pytest.importorskip("pymol")
 
 from iktos.structure_interactions.visualization.pymol import (
     prepare_session_inter,

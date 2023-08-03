@@ -230,10 +230,11 @@ def find_h_bond_donors(obatoms: List[OBAtom]) -> List[HBondDonor]:
 
             # If the H-bond donor is e.g. OH or NH2, consider alternative locations
             if obatom.GetHyb() == 3 and obatom.GetHvyDegree() == 1:
-                logger.debug(
-                    'Identified a rotatable H-bond donor in residue '
-                    f'{obatom.GetResidue().GetName()}|{obatom.GetResidue().GetNum()}'
-                )
+                if obatom.GetResidue() is not None:
+                    logger.debug(
+                        'Identified a rotatable H-bond donor in residue '
+                        f'{obatom.GetResidue().GetName()}|{obatom.GetResidue().GetNum()}'
+                    )
                 coords_h_initial = get_atom_coordinates(obneigh)
                 obneighs_not_h = [
                     obneigh
@@ -475,7 +476,6 @@ def find_charged_atoms(obatoms: List[OBAtom]) -> List[ChargedGroup]:
         charge = None
         obres = obatom.GetResidue()
         if obres is not None:
-            obres = obatom.GetResidue()
             residue_name = obres.GetName().replace(' ', '')
             atom_name = obres.GetAtomID(obatom).replace(' ', '')
             # For protein residues, charged groups are tabulated
