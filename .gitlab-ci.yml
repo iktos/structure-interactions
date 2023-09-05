@@ -1,30 +1,12 @@
 include:
   - project: 'system/gitlab/common'
-    ref: v3.0.0
+    ref: v4.3.3
     file: '/templates/gitlab-ci/python/common.yml'
 
   - project: 'system/gitlab/common'
-    ref: v3.0.0
+    ref: v4.3.3
     file: '/templates/gitlab-ci/python/package.yml'
 
 .python:
   tags:
     - python-structure-based-nordkit
-
-test:
-  extends: .test_stage
-  script:
-    - poetry config --local virtualenvs.in-project true
-    - poetry run task test
-    - poetry run coverage xml
-  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
-  artifacts:
-    when: always
-    paths:
-      - junit.xml
-      - coverage.xml
-    reports:
-      junit: junit.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
