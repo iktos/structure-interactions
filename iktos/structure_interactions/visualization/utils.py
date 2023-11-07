@@ -79,6 +79,7 @@ def _show_binding_site(
     """
     if residue_id is not None:
         selection = f'resi {residue_id} and {label_protein} and state {state}'
+        label_sele = f"n. CB and resid {residue_id} and chain {chain_id}"
     elif atom_id is not None:
         selection = f'byres id {atom_id} and {label_protein} and state {state}'
     else:
@@ -86,6 +87,7 @@ def _show_binding_site(
     if chain_id != ' ':
         selection += f' and chain {chain_id}'
     pymol_cmd.show(show_binding_site_as, selection)
+    pymol_cmd.label(label_sele, "'%s %s' % (resn, resi)")
 
 
 def draw_contacts(
