@@ -3,7 +3,6 @@ from iktos.structure_interactions import (
     analyse_interactions_inter_multi,
     convert_to_dict_inter,
 )
-from iktos.structure_interactions.visualization.pymol import prepare_session_inter
 
 
 """
@@ -32,15 +31,6 @@ contacts_raw = analyse_interactions_inter(
 # you need to convert them to a dict:
 dict_contacts = convert_to_dict_inter(contacts_raw)
 print(f'Dict of contacts: {dict_contacts}')
-
-# Prepare a Pymol session to visualise the contacts:
-prepare_session_inter(
-    open(protein_path, 'r').read(),
-    open(ligand_path, 'r').read(),
-    dict_contacts,
-    color_bg='white',
-    output_file_path='output_inter.pse'
-)
 
 # Example to analyse contacts in multiple complexes (different ligands with the same protein,
 # e.g. to analyse docking poses, this function is faster than looping over the complexes):

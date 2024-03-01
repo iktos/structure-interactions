@@ -2,7 +2,6 @@ from iktos.structure_interactions import (
     analyse_interactions_intra,
     convert_to_dict_intra,
 )
-from iktos.structure_interactions.visualization.pymol import prepare_session_intra
 
 
 """
@@ -28,12 +27,3 @@ contacts_raw = analyse_interactions_intra(
 # you need to convert them to a dict:
 dict_contacts = convert_to_dict_intra(contacts_raw)
 print(f'Dict of contacts: {dict_contacts}')
-# Prepare a Pymol session to visualise the contacts:
-prepare_session_intra(
-    open(protein_path, 'r').read(),
-    fmt='pdb',
-    contacts=dict_contacts,
-    color_bg='white',
-    color_molecule='cbaw',
-    output_file_path='output_intra.pse'
-)
