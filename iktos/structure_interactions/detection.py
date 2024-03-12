@@ -278,8 +278,8 @@ def find_pi_cations(
     rings: List[Ring],
     charged_atoms: List[ChargedGroup],
     distance_min: float = 2.0,
-    distance_max: float = 4.0,
-    offset_max: float = 2.0,
+    distance_max: float = 6.0,
+    offset_max: float = 2.3,
 ) -> List[Pi_Cation]:
     """Detects pi-cation interactions between aromatic rings
     and positively charged groups.
@@ -288,8 +288,8 @@ def find_pi_cations(
         rings: list of rings.
         charged_atoms: list of charged groups.
         distance_min: distance min (default: 2.0 Ang).
-        distance_max: distance max (default: 4.0 Ang).
-        offset_max: max offset between the centers (default: 2.0 Ang).
+        distance_max: distance max (default: 6.0 Ang).
+        offset_max: max offset between the centers (default: 2.3 Ang).
 
     Returns:
         list of detected interactions.

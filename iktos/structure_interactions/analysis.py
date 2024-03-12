@@ -31,7 +31,6 @@ from .refinement import (
     refine_water_bridges,
 )
 
-
 LOGGER = getLogger(__name__)
 
 
@@ -84,14 +83,14 @@ def _detect_interactions_inter(
         rings=rec.rings,
         charged_atoms=lig.charged_atoms,
         distance_min=parameters.min_dist,
-        distance_max=parameters.piother_dist_max,
-        offset_max=parameters.piother_offset_max,
+        distance_max=parameters.pication_dist_max,
+        offset_max=parameters.pication_offset_max,
     ) + find_pi_cations(
         rings=lig.rings,
         charged_atoms=rec.charged_atoms,
         distance_min=parameters.min_dist,
-        distance_max=parameters.piother_dist_max,
-        offset_max=parameters.piother_offset_max,
+        distance_max=parameters.pication_dist_max,
+        offset_max=parameters.pication_offset_max,
     )
     LOGGER.debug(f'Found {len(pi_cations_all)} pi-cation interaction(s)')
 

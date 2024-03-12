@@ -43,7 +43,7 @@ def test_analyse_inter_5n9t():
     assert len(dict_contacts["H_Bond"]) == 6
     assert len(dict_contacts["H_Bond_Weak"]) == 3
     assert len(dict_contacts["Multipolar"]) == 3
-    assert len(dict_contacts) == 5
+    assert len(dict_contacts) == 6
 
 
 def test_analyse_inter_6nw6():
@@ -98,9 +98,7 @@ def test_analyse_inter_multi():
         refine=True,
         lig_format='sdf',
     )
-    dicts_contacts = [
-        convert_to_dict_inter(contact) for contact in contacts_raw
-    ]
+    dicts_contacts = [convert_to_dict_inter(contact) for contact in contacts_raw]
     assert len(dicts_contacts[0]["H_Bond"]) == 3
     assert len(dicts_contacts[0]["H_Bond_Weak"]) == 1
     assert len(dicts_contacts[0]["Hydrophobic"]) == 3

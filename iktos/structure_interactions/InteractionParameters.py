@@ -26,6 +26,8 @@ class InteractionParameters:
         pistacking_dist_max_p: max dist for parallel pi-stacking (default=4.0)
         pistacking_ang_dev: max deviation to optimal angle (0 for //, 90 for |--, between -> face/edge-to-face) (default=30)
         pistacking_offset_max: max offset of the two r (corresponds to the radius of benzene + 1 a) (default=2.5)
+        pication_dist_max: ref DOI:10.1039/c7sc04905f (default=6.0)
+        pication_offset_max: max offset for pi-cation interactions (custom) (default=2.3)
         piother_dist_max: ref 1, table s2 (default=4.0)
         piother_offset_max: max offset for pi-hydrophobic, pi-cation and pi-amide interactions (custom) (default=2.0)
         saltbridge_dist_max: max dist between centers of charge for salt bridges (barlow and thornton, 1983) + 1.5 (default=5.5)
@@ -50,6 +52,9 @@ class InteractionParameters:
             A Structural Perspective, 2019, J. Med. Chem., 62, 21, 9341–9356
         B. Kuhn, E. Gilberg, R. Taylorn J. Cole, O. Korb How Significant Are Unusual Protein−Ligand
             Interactions? Insights from Database Mining, 2019, J. Med. Chem, 62, 22, 10441–10455
+        K. Kumar, S.M. Woo, T. Siu, W.A. Cortopassi, F. Duarte, R.S. Paton. Cation-π interactions in
+            protein-ligand binding: theory and data-mining reveal different roles for lysine and arginine,
+            2018, Chem. Sci., 9, 10, 2655-2665
     """
 
     bs_dist: float = 7.5
@@ -81,6 +86,8 @@ class InteractionParameters:
     pistacking_dist_max_p: float = 4.0
     pistacking_ang_dev: float = 30
     pistacking_offset_max: float = 2.5
+    pication_dist_max: float = 6.0
+    pication_offset_max: float = 2.3
     piother_dist_max: float = 4.0
     piother_offset_max: float = 2.0
 
