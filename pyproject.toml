@@ -7,12 +7,7 @@ packages = [
   {include = "iktos/**/*.py"},
 ]
 readme = "README.md"
-version = "2.2.0"
-
-[[tool.poetry.source]]
-name = "iktos"
-secondary = true
-url = "https://pypi.golgoth.iktos.ai/simple"
+version = "2.2.1"
 
 [tool.poetry.dependencies]
 python = "^3.7.1"
@@ -75,8 +70,8 @@ profile = "black"
 sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALPKG,LOCALFOLDER"
 
 [build-system]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core @ git+https://github.com/python-poetry/poetry-core.git@master"]
 
 [tool.coverage.run]
 omit = [".venv/*", "**/virtualenvs/**"]
