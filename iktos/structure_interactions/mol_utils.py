@@ -39,7 +39,6 @@ except ModuleNotFoundError:
 from . import constants
 from .math_utils import get_vector, get_vector_angle
 
-
 logger = getLogger(__name__)
 
 
@@ -160,18 +159,18 @@ def _identify_group_with_oxygen(obatom: OBAtom) -> Tuple[str, str, List[OBAtom]]
     if obatom.IsCarboxylOxygen():
         obcarbon = [obneigh for obneigh in OBAtomAtomIter(obatom)][0]
         obneighs = get_o_neighbours(obcarbon)
-        return 'carboxylate', 'negative', [obcarbon] + obneighs
+        return "carboxylate", "negative", [obcarbon] + obneighs
     if obatom.IsPhosphateOxygen():  # R-PO3
         obphosphorus = [obneigh for obneigh in OBAtomAtomIter(obatom)][0]
         obneighs = get_o_neighbours(obphosphorus)
-        return 'phosphate', 'negative', [obphosphorus] + obneighs
+        return "phosphate", "negative", [obphosphorus] + obneighs
     if obatom.IsSulfateOxygen():  # R-SO3
         obsulfur = list(OBAtomAtomIter(obatom))[0]
         obneighs = get_o_neighbours(obsulfur)
-        return 'sulfate', 'negative', [obsulfur] + obneighs
-    if obatom.MatchesSMARTS('[$([#8-])]'):
-        return 'alkoxide', 'negative', [obatom]
-    return 'oxycation', 'positive', [obatom]
+        return "sulfate", "negative", [obsulfur] + obneighs
+    if obatom.MatchesSMARTS("[$([#8-])]"):
+        return "alkoxide", "negative", [obatom]
+    return "oxycation", "positive", [obatom]
 
 
 def _identify_group_with_nitrogen(obatom: OBAtom) -> Tuple[str, str, List[OBAtom]]:
@@ -180,9 +179,9 @@ def _identify_group_with_nitrogen(obatom: OBAtom) -> Tuple[str, str, List[OBAtom
     Returns:
         fonctional group name, charge and list of obatoms involved
     """
-    if obatom.MatchesSMARTS('[$([#7+X4])]'):
-        return 'ammonium', 'positive', [obatom]
-    if obatom.MatchesSMARTS('[$([#7+X3]=[#6X3])]'):
+    if obatom.MatchesSMARTS("[$([#7+X4])]"):
+        return "ammonium", "positive", [obatom]
+    if obatom.MatchesSMARTS("[$([#7+X3]=[#6X3])]"):
         obneighs = list(OBAtomAtomIter(obatom))
         atom_list = [obatom]
         for obneigh in obneighs:
@@ -197,11 +196,11 @@ def _identify_group_with_nitrogen(obatom: OBAtom) -> Tuple[str, str, List[OBAtom
             if obnitrogens:
                 atom_list.append(obneigh)
                 atom_list += obnitrogens
-                logger.debug('Found a delocalised iminium')
-        return 'iminium', 'positive', atom_list
-    if obatom.MatchesSMARTS('[$([#7+])]'):
-        return 'azacation', 'positive', [obatom]
-    return 'azanide', 'negative', [obatom]
+                logger.debug("Found a delocalised iminium")
+        return "iminium", "positive", atom_list
+    if obatom.MatchesSMARTS("[$([#7+])]"):
+        return "azacation", "positive", [obatom]
+    return "azanide", "negative", [obatom]
 
 
 def identify_charged_group(obatom: OBAtom) -> Tuple[str, str, List[OBAtom]]:
@@ -213,28 +212,28 @@ def identify_charged_group(obatom: OBAtom) -> Tuple[str, str, List[OBAtom]]:
     # Check the neighbours, if some of them are charged -> log and ignore
     obneighs = list(OBAtomAtomIter(obatom))
     if not all(a.GetFormalCharge() == 0 for a in obneighs):
-        logger.debug('Found a group with multiple charges (e.g. NO2, NO) -> ignoring')
-        return 'unknown', 'unknown', [obatom]
+        logger.debug("Found a group with multiple charges (e.g. NO2, NO) -> ignoring")
+        return "unknown", "unknown", [obatom]
     if obatom.GetAtomicNum() == 8:
         return _identify_group_with_oxygen(obatom)
     if obatom.GetAtomicNum() == 7:
         return _identify_group_with_nitrogen(obatom)
     if obatom.GetAtomicNum() == 6:
         if obatom.GetFormalCharge() < 0:
-            logger.debug('Found a carbanion; please check your input')
-            return 'carbanion', 'negative', [obatom]
-        logger.debug('Found a carbocation; please check your input')
-        return 'carbocation', 'positive', [obatom]
+            logger.debug("Found a carbanion; please check your input")
+            return "carbanion", "negative", [obatom]
+        logger.debug("Found a carbocation; please check your input")
+        return "carbocation", "positive", [obatom]
     if obatom.GetAtomicNum() == 15:  # phosphorus
         if obatom.GetFormalCharge() > 0:
-            return 'phopsphonium', 'positive', [obatom]
-        return 'phospho-anion', 'negative', [obatom]
+            return "phopsphonium", "positive", [obatom]
+        return "phospho-anion", "negative", [obatom]
     if obatom.GetAtomicNum() == 16:  # sulfur
         if obatom.GetFormalCharge() > 0:
-            return 'sulfonium', 'positive', [obatom]
-        return 'sulfo-anion', 'negative', [obatom]
-    logger.debug('Failed to identify charged group')
-    return 'unknown', 'unknown', [obatom]
+            return "sulfonium", "positive", [obatom]
+        return "sulfo-anion", "negative", [obatom]
+    logger.debug("Failed to identify charged group")
+    return "unknown", "unknown", [obatom]
 
 
 def correct_implicit_count(obmol) -> None:
@@ -275,13 +274,13 @@ def correct_hybridisation(obmol) -> None:
         idx = obatom.GetIdx()
         obneighs = list(OBAtomAtomIter(obatom))
         if len(obneighs) == 2 and hyb != 1:
-            logger.debug(f'Changing hybridisation perceived for C{idx} to SP')
+            logger.debug(f"Changing hybridisation perceived for C{idx} to SP")
             obatom.SetHyb(1)
         if len(obneighs) == 3 and hyb != 2:
-            logger.debug(f'Changing hybridisation perceived for C{idx} to SP2')
+            logger.debug(f"Changing hybridisation perceived for C{idx} to SP2")
             obatom.SetHyb(2)
         if len(obneighs) == 4 and hyb != 3:
-            logger.debug(f'Changing hybridisation perceived for C{idx} to SP3')
+            logger.debug(f"Changing hybridisation perceived for C{idx} to SP3")
             obatom.SetHyb(3)
     obatoms = [
         obatom
@@ -293,10 +292,10 @@ def correct_hybridisation(obmol) -> None:
         idx = obatom.GetIdx()
         obneighs = list(OBAtomAtomIter(obatom))
         if len(obneighs) == 1 and hyb != 1:
-            logger.debug(f'Changing hybridisation perceived for N{idx} to SP')
+            logger.debug(f"Changing hybridisation perceived for N{idx} to SP")
             obatom.SetHyb(1)
         if len(obneighs) == 2 and hyb != 2:
-            logger.debug(f'Changing hybridisation perceived for N{idx} to SP2')
+            logger.debug(f"Changing hybridisation perceived for N{idx} to SP2")
             obatom.SetHyb(2)
         if len(obneighs) == 3:
             obneighs_csp2 = [
@@ -305,10 +304,10 @@ def correct_hybridisation(obmol) -> None:
                 if obneigh.GetAtomicNum() == 6 and obneigh.GetHyb() == 2
             ]
             if len(obneighs_csp2) == 0 and hyb != 3:
-                logger.debug(f'Changing hybridisation perceived for N{idx} to SP3')
+                logger.debug(f"Changing hybridisation perceived for N{idx} to SP3")
                 obatom.SetHyb(3)
             if len(obneighs_csp2) != 0 and hyb != 2:
-                logger.debug(f'Changing hybridisation perceived for N{idx} to SP2')
+                logger.debug(f"Changing hybridisation perceived for N{idx} to SP2")
                 obatom.SetHyb(2)
     # Set some tags on mol to force a new perception
     # of properties related to hydridisation
@@ -317,19 +316,19 @@ def correct_hybridisation(obmol) -> None:
             obmol.SetAtomTypesPerceived(False)
         except TypeError:
             logger.warning(
-                'Failed to set `HasAtomTypesPerceived` to False, '
-                'be careful with hybridisation perceived by OpenBabel'
+                "Failed to set `HasAtomTypesPerceived` to False, "
+                "be careful with hybridisation perceived by OpenBabel"
             )
 
 
 def get_atom_name(obatom: OBAtom) -> str:
     """Returns a str concatenation of atom symbol + atom ID."""
     if obabel_version == 3:
-        return f'{GetSymbol(obatom.GetAtomicNum())}{obatom.GetIdx()}'
-    return f'{OBElementTable().GetSymbol(obatom.GetAtomicNum())}{obatom.GetIdx()}'
+        return f"{GetSymbol(obatom.GetAtomicNum())}{obatom.GetIdx()}"
+    return f"{OBElementTable().GetSymbol(obatom.GetAtomicNum())}{obatom.GetIdx()}"
 
 
-def read_obmol(coords: str, fmt: str, as_string: bool, title: str = '') -> OBMol:
+def read_obmol(coords: str, fmt: str, as_string: bool, title: str = "") -> OBMol:
     """Loads a coords file/string (PDB, MOL2, SDF) with OpenBabel.
 
     Args:
@@ -351,7 +350,7 @@ def read_obmol(coords: str, fmt: str, as_string: bool, title: str = '') -> OBMol
     """
     obErrorLog.StopLogging()  # to avoid huge logs
     if not as_string:
-        with open(coords, 'r') as f:
+        with open(coords, "r") as f:
             coords = f.read()
 
     # Load OBMol from block
@@ -360,9 +359,9 @@ def read_obmol(coords: str, fmt: str, as_string: bool, title: str = '') -> OBMol
     obconversion.SetInFormat(fmt)
     obconversion.ReadString(obmol, coords)
     if obmol is None:
-        raise ValueError('Invalid molecule')
+        raise ValueError("Invalid molecule")
     if obmol.NumAtoms() == 0 or obmol.NumBonds() == 0:
-        raise ValueError('Invalid molecule')
+        raise ValueError("Invalid molecule")
 
     # Update some tags and properties
     obmol.PerceiveBondOrders()  # assign multiple bonds

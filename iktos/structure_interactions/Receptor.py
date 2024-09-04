@@ -9,10 +9,7 @@ except ImportError:
     from logging import getLogger
 
 try:
-    from openbabel.openbabel import (
-        OBAtom,
-        OBMolAtomIter,
-    )  # openbabel 3
+    from openbabel.openbabel import OBAtom, OBMolAtomIter  # openbabel 3
 except ModuleNotFoundError:
     from openbabel import (
         OBAtom,
@@ -24,8 +21,8 @@ from .atom_typing import (
     find_h_bond_acceptors,
     find_h_bond_donors,
     find_hydrophobics,
-    find_metals,
     find_metal_binders,
+    find_metals,
     find_pi_carbons,
     find_rings,
     find_x_bond_acceptors,
@@ -33,7 +30,6 @@ from .atom_typing import (
 from .Ligand import Ligand
 from .mol_utils import get_all_coordinates, map_atom_ids, read_obmol
 from .utils import parse_pdb
-
 
 logger = getLogger(__name__)
 
@@ -45,7 +41,7 @@ class Receptor:
         # Read and parse receptor file/string
         rec_coords_block, mapping = parse_pdb(rec_pdb_coords, as_string=as_string)
         obmol = read_obmol(
-            rec_coords_block, fmt='pdb', title='receptor', as_string=True
+            rec_coords_block, fmt="pdb", title="receptor", as_string=True
         )
 
         # Map atom IDs back to their original value
@@ -69,7 +65,7 @@ class Receptor:
         """
         # Detect receptor atoms close to the ligand (binding site) and identify
         # functional groups for these atoms
-        logger.debug('Selecting binding site residues and atoms')
+        logger.debug("Selecting binding site residues and atoms")
         # Use Ball Tree to store coords and to efficiently compute
         # the distance between receptor and ligand's atoms
         tree = BallTree(self.coordinates, leaf_size=5)
@@ -79,7 +75,7 @@ class Receptor:
             np.concatenate(tree.query_radius(ligands_coordinates, r=distance))
         )
         self.bs_atoms = list(np.array(self.atoms)[indexes])
-        logger.debug(f'Selected {len(self.bs_atoms)} atoms as binding site')
+        logger.debug(f"Selected {len(self.bs_atoms)} atoms as binding site")
 
     def identify_functional_groups(self):
         """Identifies functional groups in the receptor.
@@ -101,20 +97,20 @@ class Receptor:
                 water_atoms.append(obatom)
 
         # Identify functional groups for non-water residues
-        logger.debug('Looking at non-water residues on the receptor side')
+        logger.debug("Looking at non-water residues on the receptor side")
         self.hydrophobics = find_hydrophobics(protein_atoms)
         self.h_bond_acceptors = find_h_bond_acceptors(protein_atoms)
         self.h_bond_donors = find_h_bond_donors(protein_atoms)
         self.charged_atoms = find_charged_atoms(protein_atoms)
-        self.metals = find_metals(protein_atoms, 'receptor')
-        self.metal_binders = find_metal_binders(protein_atoms, 'receptor')
+        self.metals = find_metals(protein_atoms, "receptor")
+        self.metal_binders = find_metal_binders(protein_atoms, "receptor")
         # self.halogens = find_halogens(protein_atoms) (proteins normally don't contain halogens)
         self.x_bond_acceptors = find_x_bond_acceptors(protein_atoms)
         self.pi_carbons = find_pi_carbons(protein_atoms)
 
         # Now look at water molecules
-        logger.debug('Looking at water molecules on the receptor side')
+        logger.debug("Looking at water molecules on the receptor side")
         self.water_h_bond_acceptors = find_h_bond_acceptors(water_atoms)
         self.water_h_bond_donors = find_h_bond_donors(water_atoms)
         self.water_x_bond_acceptors = find_x_bond_acceptors(water_atoms)
-        self.water_metal_binders = find_metal_binders(water_atoms, 'water')
+        self.water_metal_binders = find_metal_binders(water_atoms, "water")

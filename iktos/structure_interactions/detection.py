@@ -143,11 +143,11 @@ def find_pi_stackings(
         angle_tmp = get_vector_angle(ring_1.normal, ring_2.normal)
         angle = min(angle_tmp, 180 - angle_tmp)
         if 0 <= angle <= angle_dev and dist <= distance_max_p:
-            type = 'P'
+            type = "P"
         elif angle >= 90 - angle_dev:
-            type = 'T'
+            type = "T"
         elif dist <= distance_max_f:
-            type = 'F'
+            type = "F"
         else:
             continue
 
@@ -296,7 +296,7 @@ def find_pi_cations(
     """
     pairings: List[Pi_Cation] = []
     for r, c in product(rings, charged_atoms):
-        if c.charge != 'positive':
+        if c.charge != "positive":
             continue
 
         # Check distance
@@ -407,7 +407,7 @@ def _check_angle_H(
             angle_dha = get_vector_angle(vec_hd, vec_ha)
             if angle_dha >= donor_angle_min:
                 logger.debug(
-                    'Found an alternative H position with a valid D-H--A angle'
+                    "Found an alternative H position with a valid D-H--A angle"
                 )
                 dist_ah = get_euclidean_distance_3d(
                     acc.atom_list[0].coords, alt_location
@@ -788,7 +788,7 @@ def find_water_bridges(
     # Note: a.atom_list = [A], d.atom_list = [D, H]
     pairings: List[Water_Bridge] = []
     for a, d in product(acceptors, donor_pairs):
-        if not d.type == 'strong':
+        if not d.type == "strong":
             continue
         for w in waters:
             # Check distances
@@ -899,28 +899,28 @@ def find_metal_complexes(
 
     # Save relevant contacts
     for i, (metal_id, contact_pairs) in enumerate(pairings_dict.items()):
-        logger.debug(f'Looking at metal: {metal_id}')
+        logger.debug(f"Looking at metal: {metal_id}")
         # If the list of binders doesn't include receptor and ligand, discard
         locations = set([x[1].location for x in contact_pairs])
-        if 'ligand' not in locations:
+        if "ligand" not in locations:
             logger.warning(
-                f'--> ignoring metal {metal_id} because it is not connected to the ligand'
+                f"--> ignoring metal {metal_id} because it is not connected to the ligand"
             )
             continue
-        elif 'receptor' not in locations:
+        elif "receptor" not in locations:
             logger.warning(
-                f'--> ignoring metal {metal_id} because it is not connected to the receptor'
+                f"--> ignoring metal {metal_id} because it is not connected to the receptor"
             )
             continue
         # Save contact - note: this contact explicitely says ligand and receptor,
         # the function is written to detect intermolecular complexes
         num_binders = len(contact_pairs)
         logger.debug(
-            f'--> metal ion {metal_id} complexed by {num_binders} metal binders'
+            f"--> metal ion {metal_id} complexed by {num_binders} metal binders"
         )
         receptor_binders, ligand_binders = [], []
         for metal, binder in contact_pairs:
-            if binder.location != 'ligand':
+            if binder.location != "ligand":
                 receptor_binders.append(binder.atom_list[0])
             else:
                 ligand_binders.append(binder.atom_list[0])

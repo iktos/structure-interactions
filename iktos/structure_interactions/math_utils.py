@@ -74,7 +74,7 @@ def get_vector(p1, p2):
         Numpy array with vector coordinates.
     """
     if not (len(p1) == 3 and len(p2) == 3):
-        LOGGER.error(f'Invalid vector format: {p1}, {p2}')
+        LOGGER.error(f"Invalid vector format: {p1}, {p2}")
         raise ValueError()
     return (
         None

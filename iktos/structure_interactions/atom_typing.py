@@ -13,8 +13,8 @@ except ImportError:
 try:
     from openbabel.openbabel import (  # openbabel 3
         OBAtom,
-        OBMol,
         OBAtomAtomIter,
+        OBMol,
         OBMolAtomIter,
         OBResidueAtomIter,
     )
@@ -64,7 +64,7 @@ def find_rings(obmol: OBMol) -> List[Ring]:
     Aromatic rings include 5- and 6-membered rings detected by OpenBabel as aromatic,
     or sufficiently planar.
     """
-    aromatic_amino = ['TYR', 'TRP', 'HIS', 'HID', 'HIE', 'HIP', 'HSD', 'HSE', 'PHE']
+    aromatic_amino = ["TYR", "TRP", "HIS", "HID", "HIE", "HIP", "HSD", "HSE", "PHE"]
     all_rings = obmol.GetSSSR()
     selection = []
     obmol_atoms = list(OBMolAtomIter(obmol))
@@ -72,7 +72,7 @@ def find_rings(obmol: OBMol) -> List[Ring]:
         ring_atoms = [a for a in obmol_atoms if obring.IsMember(a)]
 
         # Residue name is only relevant for the proteins
-        residue_name = ''
+        residue_name = ""
         if ring_atoms[0].GetResidue() is not None:
             residue_name = ring_atoms[0].GetResidue().GetName()
         if len(ring_atoms) not in [5, 6]:
@@ -93,7 +93,7 @@ def find_rings(obmol: OBMol) -> List[Ring]:
             normal = normalize_vector(np.cross(ringv1, ringv2))
             center = get_centroid([get_atom_coordinates(ra) for ra in ring_atoms])
             selection.append(Ring(atom_list=atoms, normal=normal, center=center))
-    logger.debug(f'Found {len(selection)} aromatic ring(s)')
+    logger.debug(f"Found {len(selection)} aromatic ring(s)")
     return selection
 
 
@@ -129,7 +129,7 @@ def find_hydrophobics(obatoms: List[OBAtom]) -> List[HydrophobicAtom]:
     for obatom in obatoms_filtered:
         if obatom.GetAtomicNum() == 16 and obatom.GetHyb() != 3:
             logger.debug(
-                f'Excluding S{obatom.GetId()} from list of hydrophobics (not SP3)'
+                f"Excluding S{obatom.GetId()} from list of hydrophobics (not SP3)"
             )
             continue
         # List neighbours radius 1
@@ -153,7 +153,7 @@ def find_hydrophobics(obatoms: List[OBAtom]) -> List[HydrophobicAtom]:
                 neighbours_radius_2=[Atom(obneigh) for obneigh in obneighs_all],
             )
         )
-    logger.debug(f'Found {len(selection)} hydrophobic atoms')
+    logger.debug(f"Found {len(selection)} hydrophobic atoms")
     return selection
 
 
@@ -192,7 +192,7 @@ def find_h_bond_acceptors(obatoms: List[OBAtom]) -> List[HBondAcceptor]:
                 neighbours=[Atom(a) for a in obneighs],
             )
         )
-    logger.debug(f'Found {len(selection)} H-bond acceptors')
+    logger.debug(f"Found {len(selection)} H-bond acceptors")
     return selection
 
 
@@ -232,8 +232,8 @@ def find_h_bond_donors(obatoms: List[OBAtom]) -> List[HBondDonor]:
             if obatom.GetHyb() == 3 and obatom.GetHvyDegree() == 1:
                 if obatom.GetResidue() is not None:
                     logger.debug(
-                        'Identified a rotatable H-bond donor in residue '
-                        f'{obatom.GetResidue().GetName()}|{obatom.GetResidue().GetNum()}'
+                        "Identified a rotatable H-bond donor in residue "
+                        f"{obatom.GetResidue().GetName()}|{obatom.GetResidue().GetNum()}"
                     )
                 coords_h_initial = get_atom_coordinates(obneigh)
                 obneighs_not_h = [
@@ -254,11 +254,11 @@ def find_h_bond_donors(obatoms: List[OBAtom]) -> List[HBondDonor]:
             selection.append(
                 HBondDonor(
                     atom_list=[Atom(obatom), Atom(obneigh)],
-                    type='strong',
+                    type="strong",
                     alt_locations=alt_locations,
                 )
             )
-    logger.debug(f'Found {len(selection)} strong H-bond donor pairs')
+    logger.debug(f"Found {len(selection)} strong H-bond donor pairs")
 
     # Find polarised C-H (near O, or near N, or SP2 or SP) and S-H
     for obatom in obatoms:
@@ -268,7 +268,7 @@ def find_h_bond_donors(obatoms: List[OBAtom]) -> List[HBondDonor]:
                 selection.append(
                     HBondDonor(
                         atom_list=[Atom(obatom), Atom(obh)],
-                        type='weak',
+                        type="weak",
                         alt_locations=[],
                     )
                 )
@@ -283,11 +283,11 @@ def find_h_bond_donors(obatoms: List[OBAtom]) -> List[HBondDonor]:
                     selection.append(
                         HBondDonor(
                             atom_list=[Atom(obatom), Atom(obh)],
-                            type='weak',
+                            type="weak",
                             alt_locations=[],
                         )
                     )
-    logger.debug(f'Found {len(selection)} H-bond donor pairs (incl. weak)')
+    logger.debug(f"Found {len(selection)} H-bond donor pairs (incl. weak)")
     return selection
 
 
@@ -317,7 +317,7 @@ def find_x_bond_acceptors(obatoms: List[OBAtom]) -> List[XBondAcceptor]:
                     atom_list=[Atom(obatom)], neighbours=[Atom(a) for a in obneighs]
                 )
             )
-    logger.debug(f'Found {len(selection)} halogen bond acceptor(s)')
+    logger.debug(f"Found {len(selection)} halogen bond acceptor(s)")
     return selection
 
 
@@ -346,7 +346,7 @@ def find_halogens(obatoms: List[OBAtom]) -> List[XBondDonor]:
         obneighs = [a for a in OBAtomAtomIter(obatom)]
         if len(obneighs) == 1 and obneighs[0].GetAtomicNum() == 6:
             selection.append(XBondDonor(atom_list=[Atom(obneighs[0]), Atom(obatom)]))
-    logger.debug(f'Found {len(selection)} halogen(s)')
+    logger.debug(f"Found {len(selection)} halogen(s)")
     return selection
 
 
@@ -394,7 +394,7 @@ def find_pi_carbons(obatoms: List[OBAtom]) -> List[PiCarbon]:
                     center=center,
                 )
             )
-    logger.debug(f'Found {len(selection)} pi-carbon(s)')
+    logger.debug(f"Found {len(selection)} pi-carbon(s)")
     return selection
 
 
@@ -419,7 +419,7 @@ def find_metals(obatoms: List[OBAtom], location: str) -> List[Metal]:
     )
     for obatom in obatoms_filtered:
         selection.append(Metal(atom_list=[Atom(obatom)], location=location))
-    logger.debug(f'Found {len(selection)} metal atom(s)')
+    logger.debug(f"Found {len(selection)} metal atom(s)")
     return selection
 
 
@@ -445,7 +445,7 @@ def find_metal_binders(obatoms: List[OBAtom], location: str) -> List[MetalBinder
     obatoms_filtered = filter(lambda obatom: atom_has_lone_pair(obatom), obatoms)
     for obatom in obatoms_filtered:
         selection.append(MetalBinder(atom_list=[Atom(obatom)], location=location))
-    logger.debug(f'Found {len(selection)} metal binder(s)')
+    logger.debug(f"Found {len(selection)} metal binder(s)")
     return selection
 
 
@@ -476,28 +476,28 @@ def find_charged_atoms(obatoms: List[OBAtom]) -> List[ChargedGroup]:
         charge = None
         obres = obatom.GetResidue()
         if obres is not None:
-            residue_name = obres.GetName().replace(' ', '')
-            atom_name = obres.GetAtomID(obatom).replace(' ', '')
+            residue_name = obres.GetName().replace(" ", "")
+            atom_name = obres.GetAtomID(obatom).replace(" ", "")
             # For protein residues, charged groups are tabulated
             # If the residue does not appear in the list of known charged residues,
             # then we check the charge as we do with ligands (note: a ligand can be
             # a peptide and appear in CHARGED_RESIDUES)
             if residue_name in constants.CHARGED_RESIDUES:
                 for charged_group in constants.CHARGED_RESIDUES[residue_name]:
-                    if atom_name == charged_group['on_atoms'][0]:
+                    if atom_name == charged_group["on_atoms"][0]:
                         obatms = [
                             obatm
                             for obatm in OBResidueAtomIter(obres)
-                            if obres.GetAtomID(obatm).replace(' ', '')
-                            in charged_group['on_atoms']
+                            if obres.GetAtomID(obatm).replace(" ", "")
+                            in charged_group["on_atoms"]
                         ]
-                        fgroup = charged_group['fgroup']
-                        charge = charged_group['charge']
+                        fgroup = charged_group["fgroup"]
+                        charge = charged_group["charge"]
             elif obatom.GetFormalCharge() != 0:
                 fgroup, charge, obatms = identify_charged_group(obatom)
         elif obatom.GetFormalCharge() != 0:
             fgroup, charge, obatms = identify_charged_group(obatom)
-        if charge in ['positive', 'negative']:
+        if charge in ["positive", "negative"]:
             centroid = get_centroid([get_atom_coordinates(a) for a in obatms])
             atoms = [Atom(a) for a in obatms]
             selection.append(
@@ -505,5 +505,5 @@ def find_charged_atoms(obatoms: List[OBAtom]) -> List[ChargedGroup]:
                     atom_list=atoms, charge=charge, center=centroid, fgroup=fgroup
                 )
             )
-    logger.debug(f'Found {len(selection)} charged atom(s)')
+    logger.debug(f"Found {len(selection)} charged atom(s)")
     return selection
