@@ -76,6 +76,13 @@ def convert_to_dict_inter(interactions: Sequence) -> Dict[str, List[Dict[str, An
                 else:
                     parsed_contact["at_l"] = [a.atom_id for a in atom_list]
                     parsed_contact["at_name_l"] = [a.atom_name for a in atom_list]
+                    # If the ligand is in PDB format, add information of which residue of ligand is interacting
+                    # If there is no information about residues, by default there is "UNL" in attribute residue_id
+                    # cf class `Atom`
+                    if ("UNL" not in (residue_ligand := atom_list[0].residue_id)) and (
+                        contact_name != "Metal_Complex"
+                    ):
+                        parsed_contact["res_l"] = residue_ligand
             elif field == "water":
                 atom_list = getattr(contact, field)
                 parsed_contact["at_owat"] = [a.atom_id for a in atom_list]
