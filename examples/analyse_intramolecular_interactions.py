@@ -3,7 +3,6 @@ from iktos.structure_interactions import (
     convert_to_dict_intra,
 )
 
-
 """
 NOTES:
  - Hs need to be explicit and in 3D both for the protein and the ligand
@@ -17,7 +16,7 @@ NOTES:
 """
 
 # Example to analyse contacts in a peptide/protein:
-protein_path = 'data/prot_5UIT.pdb'  # PDB file
+protein_path = "data/prot_5UIT.pdb"  # PDB file
 contacts_raw = analyse_interactions_intra(
     protein_path,
     is_small_molecule=False,
@@ -26,4 +25,15 @@ contacts_raw = analyse_interactions_intra(
 # The previous function returns a list of contact objects - to use it in SA,
 # you need to convert them to a dict:
 dict_contacts = convert_to_dict_intra(contacts_raw)
-print(f'Dict of contacts: {dict_contacts}')
+print(f"Dict of contacts: {dict_contacts}")
+
+# Example to analyse contacts in the binding site of a protein:
+contacts_raw = analyse_interactions_intra(
+    protein_path,
+    is_small_molecule=False,
+    as_string=False,
+    lig_coords="data/lig_5UIT.sdf",  # defines the binding site
+    lig_format="sdf",
+)
+dict_contacts = convert_to_dict_intra(contacts_raw)
+print(f"Dict of contacts: {dict_contacts}")

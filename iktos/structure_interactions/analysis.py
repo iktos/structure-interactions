@@ -1,4 +1,4 @@
-from typing import List, Sequence, Union
+from typing import List, Optional, Sequence, Union
 
 try:
     from iktos.logger import getLogger
@@ -433,6 +433,8 @@ def analyse_interactions_intra(
     is_small_molecule: bool = True,
     as_string: bool = True,
     parameters: InteractionParameters = InteractionParameters(),
+    lig_coords: Optional[str] = None,
+    lig_format: Optional[str] = None,
 ) -> Sequence:
     """Analyses intramolecular interactions.
 
@@ -446,6 +448,7 @@ def analyse_interactions_intra(
                 * for polymeric chains (peptides or DNA), only PDB is supported and the atom typing
                   is partly done based on atom names and residue names (for the detection of rings
                   and charged groups).
+                  It is possible to add a ligand to only detect intramolecular interactions in the binding site rather than in the whole protein.
 
     Args:
         coords: coords block or path to the coords file.
@@ -453,6 +456,8 @@ def analyse_interactions_intra(
         is_small_molecule: whether to treat the input as a small molecule or a polymeric chain (default: True).
         as_string: whether to read coords in files or from blocks (default: True).
         parameters: cutoffs to use for the detection of interactions.
+        lig_coords: optional, name of ligand multi coords file or coords block to detect only intramolecular interactions in the binding site.
+        lig_format: optional, format of lig_coords (recommended format is 'sdf').
 
     Returns:
         list of contact objects.
@@ -466,6 +471,11 @@ def analyse_interactions_intra(
         mol: Union[Ligand, Receptor] = Ligand(coords, fmt, as_string=as_string)
     else:
         mol = Receptor(coords, as_string=as_string)
+        if (lig_coords is not None) and (lig_format is not None):
+            # Load ligand
+            ligand = Ligand(lig_coords, lig_format, as_string=as_string)
+            # Restrain search of intramolecular interactions only in the binding site of the protein, as defined by the previously loaded ligand
+            mol.detect_binding_site([ligand], parameters.bs_dist)
         mol.identify_functional_groups()
     return _detect_interactions_intra(
         mol=mol,
