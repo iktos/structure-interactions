@@ -1,11 +1,17 @@
 include:
   - project: 'system/gitlab/common'
-    ref: v4.3.3
+    ref: v4.6.0
     file: '/templates/gitlab-ci/python/common.yml'
 
   - project: 'system/gitlab/common'
-    ref: v4.3.3
+    ref: v4.6.0
     file: '/templates/gitlab-ci/python/package.yml'
+
+
+variables:
+  POETRY_INSTALL_CMD: "poetry install -vvv --no-interaction --all-extras"
+  CUSTOM_POETRY_VERSION: 1.8.2
+
 
 .python:
   tags:
