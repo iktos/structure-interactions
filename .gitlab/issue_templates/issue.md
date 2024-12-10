@@ -35,5 +35,5 @@ Are you using a tagged version (installed with `pip`) or the development version
 
 (If you have anything more to add)
 
-/assign @philippe.pinel @guillaume.plum @jean.baptiste.cheron
+/assign @philippe.pinel @akriukova @juan.sanz.garcia @guillaume.plum @jean.baptiste.cheron
 /label ~"Workflow::Need Discussion" ~"Type::Bug"

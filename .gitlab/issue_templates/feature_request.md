@@ -18,5 +18,5 @@
 
 (any resources that would help evaluating and implementing this feature)
 
-/assign @philippe.pinel @guillaume.plum @jean.baptiste.cheron
+/assign @philippe.pinel @akriukova @juan.sanz.garcia @guillaume.plum @jean.baptiste.cheron
 /label ~"Workflow::Need Discussion" ~"Type::Feature request"
